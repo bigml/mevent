@@ -16,10 +16,6 @@ moon is a highy concurrency dynamic web solution write in c.
 ![modules](https://raw.githubusercontent.com/bigml/mbase/master/doc/pic/module.png)
 
 
-#### network skeleton of mevent ####
-![network](https://raw.githubusercontent.com/bigml/mbase/master/doc/pic/detail.png)
-
-
 
 ### mevent ###
 Mevent is the middleware between mgate(fastcgi worker) and database.
@@ -33,58 +29,63 @@ You need make choise to compact with your application need.
 Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 
 
+#### network skeleton of mevent ####
+![network](https://raw.githubusercontent.com/bigml/mbase/master/doc/pic/detail.png)
+
+
 
 ### protocol ###
-> 0                   1                   2                   3
->  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> Header
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |    Version    |                 Request ID                    |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |         Request command       |             Flags             |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                      plugin name length                       |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> :                          plugin name                          :
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> Body
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                         variable type                         |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                      variable name length                     |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> :                          variable name                        :
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |        variable value/ variable value length/ array count     |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> :                          variable value                       :
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    Header
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |    Version    |                 Request ID                    |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |         Request command       |             Flags             |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                      plugin name length                       |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    :                          plugin name                          :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    Body
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                         variable type                         |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                      variable name length                     |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    :                          variable name                        :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |        variable value/ variable value length/ array count     |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    :                          variable value                       :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 ##### request header #####
 
-* Version (4 bits)
-  protocol version
+*   Version (4 bits)
+    protocol version
 
-* Request ID (28 bits)
-  request ident number
+*   Request ID (28 bits)
+    request ident number
 
-* Request command (16 bits)
-  request command number (business application command)
+*   Request command (16 bits)
+    request command number (business application command)
 
-* Flags (16 bits)
-  Sync, or Async mode
+*   Flags (16 bits)
+    Sync, or Async mode
 
-* plugin name length (32 bits)
-  business application name length
+*   plugin name length (32 bits)
+    business application name length
 
-* plugin name (variable length)
-  business application name
+*   plugin name (variable length)
+    business application name
 
 
 ##### request body #####
 
-* variable type (32 bits)
+*   variable type (32 bits)
 ```c
   enum {
       DATA_TYPE_EOF = 0,
@@ -94,14 +95,14 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
   };
 ```
 
-* variable name length (32 bits)
-  length of the variable name.
+*   variable name length (32 bits)
+    length of the variable name.
 
 
-* variable name (32 bits)
-  variable name
+*   variable name (32 bits)
+    variable name
 
-* variable value/ variable value length/ array count (variable length)
+*   variable value/ variable value length/ array count (variable length)
 ```c
   if (variable type == DATA_TYPE_U32)
       this means variable value
@@ -111,8 +112,8 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
       this means array count
 ```
 
-* variable value (optional, variable length)
-  variable value (only appear on variable type == DATA_TYPE_STRING || DATA_TYPE_ARRAY)
+*   variable value (optional, variable length)
+    variable value (only appear on variable type == DATA_TYPE_STRING || DATA_TYPE_ARRAY)
 
 
 Currently, mevent only use a "root" string variable now.
@@ -121,33 +122,33 @@ And, it's value is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf) f
 
 ##### response packet #####
 
-> 0                   1                   2                   3
->  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                          Request ID                           |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                          Reply Code                           |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> |                             vsize                             |
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-> :                              val                              :
-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                          Request ID                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                          Reply Code                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                             vsize                             |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    :                              val                              :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-* Request ID (32 bits)
-  request ident number (equal to id from request header)
+*   Request ID (32 bits)
+    request ident number (equal to id from request header)
 
-* Reply Code (32 bits)
-  business result
+*   Reply Code (32 bits)
+    business result
 
-  - REP_ERR_xxx        14 ~ 24  (system level error)
-  - REP_ERR_APP_xxx    25 ~ 999 (business level error)
-  - REP_OK_xxx         > 1000   (process ok)
+    - REP_ERR_xxx        14 ~ 24  (system level error)
+    - REP_ERR_APP_xxx    25 ~ 999 (business level error)
+    - REP_OK_xxx         > 1000   (process ok)
 
-* vsize (optional, 32 bits)
-  business return size (if need)
+*   vsize (optional, 32 bits)
+    business return size (if need)
 
-* val (optional, variable length)
-  business return (if need)
+*   val (optional, variable length)
+    business return (if need)
 
-  val is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf),
-  and vsize is it's length.
+    val is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf),
+    and vsize is it's length.
