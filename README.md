@@ -65,21 +65,27 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 ##### request header #####
 
 *   Version (4 bits)
+
     protocol version
 
 *   Request ID (28 bits)
+
     request ident number
 
 *   Request command (16 bits)
+
     request command number (business application command)
 
 *   Flags (16 bits)
+
     Sync, or Async mode
 
 *   plugin name length (32 bits)
+
     business application name length
 
 *   plugin name (variable length)
+
     business application name
 
 
@@ -96,10 +102,12 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 ```
 
 *   variable name length (32 bits)
+
     length of the variable name.
 
 
 *   variable name (32 bits)
+
     variable name
 
 *   variable value/ variable value length/ array count (variable length)
@@ -113,6 +121,7 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 ```
 
 *   variable value (optional, variable length)
+
     variable value (only appear on variable type == DATA_TYPE_STRING || DATA_TYPE_ARRAY)
 
 
@@ -135,9 +144,11 @@ And, it's value is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf) f
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 *   Request ID (32 bits)
+
     request ident number (equal to id from request header)
 
 *   Reply Code (32 bits)
+
     business result
 
     - REP_ERR_xxx        14 ~ 24  (system level error)
@@ -145,9 +156,11 @@ And, it's value is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf) f
     - REP_OK_xxx         > 1000   (process ok)
 
 *   vsize (optional, 32 bits)
+
     business return size (if need)
 
 *   val (optional, variable length)
+
     business return (if need)
 
     val is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf),
