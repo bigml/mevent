@@ -1,4 +1,5 @@
-BASEDIR = ../../
+LOCALBASE = ../../
+include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
 UNAME := $(shell uname)
@@ -8,7 +9,7 @@ PREFIX=/usr/local
 
 CFLAGS += -shared -fPIC
 
-CFLAGS += -I$(BASEDIR)event/daemon/ $(INC_MOON) -Iprivate
+CFLAGS += -I$(BASEDIR)event/daemon/ $(INC_MOON) $(INC_LOCAL) -I../daemon -Iprivate
 
 SOURCES = $(wildcard *.c)
 LIB_PLUGIN = $(patsubst %.c, %.so, $(SOURCES))

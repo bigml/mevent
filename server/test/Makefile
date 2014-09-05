@@ -1,8 +1,9 @@
-BASEDIR = ../../
+LOCALBASE = ../../
+include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
 INCS	= -I../daemon -I../plugin $(INC_MOON)
-LIBS	= -levent $(LIB_MOON)
+LIBS	= -levent $(LIB_MOON) $(LIB_LOCAL)
 
 SOURCES = $(wildcard *.c)
 BINARY = $(patsubst %.c, %, $(SOURCES))

@@ -1,4 +1,5 @@
-BASEDIR = ../../
+LOCALBASE = ../
+include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
 # prefix for installing the binaries
@@ -84,5 +85,3 @@ clean:
 	rm -f *.bb *.bbg *.da *.gcov *.gcda *.gcno gmon.out
 
 .PHONY: default all libs install-lib install-man install clean
-
-

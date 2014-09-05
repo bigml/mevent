@@ -1,4 +1,5 @@
-BASEDIR = ../../
+LOCALBASE = ../../
+include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
 # prefix for installing the binaries
@@ -21,8 +22,8 @@ CFLAGS += -DENABLE_TIPC=$(ENABLE_TIPC) \
 		-DENABLE_SCTP=$(ENABLE_SCTP)
 
 
-CFLAGS += $(INC_MOON)
-LIBS = -levent $(LIB_MOON)
+CFLAGS += $(INC_MOON) $(INC_LOCAL)
+LIBS = -levent $(LIB_MOON) $(LIB_LOCAL)
 
 
 OBJS = mevent.o queue.o log.o net.o parse.o reply.o stats.o config.o common.o syscmd.o smsalarm.o
@@ -96,4 +97,3 @@ clean-prof:
 .PHONY: default all \
 	install-bin install-man install uninstall \
 	clean-build clean-prof clean
-
