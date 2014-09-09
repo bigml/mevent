@@ -9,7 +9,7 @@ PREFIX=/usr/local
 
 CFLAGS += -shared -fPIC
 
-CFLAGS += -I$(BASEDIR)event/daemon/ $(INC_MOON) $(INC_LOCAL) -I../daemon -Iprivate
+CFLAGS += $(INC_MOON) $(INC_LOCAL) -I../daemon -Iprivate
 
 SOURCES = $(wildcard *.c)
 LIB_PLUGIN = $(patsubst %.c, %.so, $(SOURCES))
