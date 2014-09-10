@@ -23,7 +23,7 @@ ifeq ($(UNAME), Darwin)
 	@$(CC) $(CFLAGS) -c $< -o $(patsubst %.c, %.o, $<)
 	@$(CC) -dynamiclib -undefined suppress -flat_namespace $(patsubst %.c, %.o, $<) -o $@
 else
-	@$(CC) $(CFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -o $@ $^
 endif
 
 install:
