@@ -18,12 +18,13 @@ static void skeleton_process_driver(EventEntry *entry, QueueEntry *q)
     case REQ_CMD_STATS:
         st->msg_stats++;
         err = STATUS_OK;
-        hdf_set_int_value(q->hdfsnd, "msg_total", st->msg_total);
-        hdf_set_int_value(q->hdfsnd, "msg_unrec", st->msg_unrec);
-        hdf_set_int_value(q->hdfsnd, "msg_badparam", st->msg_badparam);
-        hdf_set_int_value(q->hdfsnd, "msg_stats", st->msg_stats);
-        hdf_set_int_value(q->hdfsnd, "proc_suc", st->proc_suc);
-        hdf_set_int_value(q->hdfsnd, "proc_fai", st->proc_fai);
+        mcs_set_int64_value(q->hdfsnd, "msg_total", st->msg_total);
+        mcs_set_int64_value(q->hdfsnd, "msg_unrec", st->msg_unrec);
+        mcs_set_int64_value(q->hdfsnd, "msg_badparam", st->msg_badparam);
+        mcs_set_int64_value(q->hdfsnd, "msg_stats", st->msg_stats);
+        mcs_set_int64_value(q->hdfsnd, "proc_suc", st->proc_suc);
+        mcs_set_int64_value(q->hdfsnd, "proc_fai", st->proc_fai);
+        mcs_set_int64_value(q->hdfsnd, "queue_size", entry->op_queue->size);
         break;
     default:
         st->msg_unrec++;

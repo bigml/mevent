@@ -20,11 +20,11 @@ moon is a highy concurrency dynamic web solution write in c.
 ### mevent ###
 Mevent is the middleware between mgate(fastcgi worker) and database.
 
-Mevent depend on mbase, so you need to clone is with --recursive option.
+Mevent depend on mbase, so you need to clone it with --recursive option.
 And read the mbase's README first.
 
 Mevent can work under Sync, or Async mode with udp, or tcp connection.
-You need make choise to compact with your application need.
+You need make choise to compact with your businees application.
 
 Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 
@@ -36,7 +36,7 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 
 ### protocol ###
 
-    0                   1                   2                   3
+     0                   1                   2                   3
      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     Header
