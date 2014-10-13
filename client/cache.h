@@ -10,6 +10,7 @@
 #define MAX_CACHEKEY_LEN    1024
 
 extern volatile time_t g_ctime;
+extern volatile double g_ctimef;
 
 struct cache {
     /* set directly by initialization */
@@ -66,4 +67,3 @@ int cache_incrf(struct cache *cd, int64_t increment, int64_t *newval,
                 const char *keyfmt, ...);
 
 #endif
-

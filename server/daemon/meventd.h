@@ -7,13 +7,13 @@
 #include "queue.h"
 
 /*
- * private, internal use 
+ * private, internal use
  */
 struct mevent {
     size_t numevts;
     size_t hashlen;
     size_t chainlen;
-    
+
     struct event_chain *table;
 };
 
@@ -26,7 +26,8 @@ struct event_chain {
 struct timer_entry {
     int timeout;
     bool repeat;
-    void (*timer)(struct event_entry *e, unsigned int upsec);
+    void (*timer)(struct event_entry *e, unsigned int upsec, void *data);
+    void *data;
     struct timer_entry *next;
 };
 
@@ -67,7 +68,8 @@ typedef struct event_entry EventEntry;
 struct mevent* mevent_start();
 void mevent_stop(struct mevent *evt);
 void mevent_add_timer(struct timer_entry **timers, int timeout, bool repeat,
-                      void (*timer)(struct event_entry *e, unsigned int upsec));
+                      void (*timer)(struct event_entry *e, unsigned int upsec, void *data),
+                      void *data);
 
 struct event_entry* find_entry_in_table(struct mevent *evt, const unsigned char *key, size_t ksize);
 

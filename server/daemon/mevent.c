@@ -90,7 +90,7 @@ static void* mevent_start_base_entry(void *arg)
          * operation. This also frees it's components. */
         queue_entry_free(q);
     }
-    
+
     return NULL;
 }
 
@@ -119,7 +119,7 @@ static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void 
     e->op_queue = queue_create();
     e->op_thread = malloc(sizeof(pthread_t));
     pthread_create(e->op_thread, NULL, mevent_start_base_entry, (void*)e);
-    
+
     uint32_t h;
     struct event_chain *c;
     h = hash(e->name, e->ksize) % evt->hashlen;
@@ -139,7 +139,7 @@ static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void 
         mevent_stop_driver(e);
         return 0;
     }
-    
+
     return 1;
 }
 
@@ -171,7 +171,7 @@ struct mevent* mevent_start(void)
 
     struct mevent *evt = calloc(1, sizeof(struct mevent));
     if (evt == NULL) return NULL;
-    
+
     evt->numevts = 0;
     evt->chainlen = 1000000;
     //evt->hashlen = evt->numevts / evt->chainlen;
@@ -184,7 +184,7 @@ struct mevent* mevent_start(void)
     HDF *res = hdf_get_obj(g_cfg, PRE_SERVER".plugins.0");
     while (res != NULL) {
         lib = NULL; driver = NULL; memset(tbuf, 0x0, sizeof(tbuf));
-        
+
         snprintf(tbuf, sizeof(tbuf), "%smevent_%s.so", PLUGIN_PATH, hdf_obj_value(res));
         //lib = dlopen(tbuf, RTLD_NOW|RTLD_GLOBAL);
         lib = dlopen(tbuf, RTLD_LAZY|RTLD_GLOBAL);
@@ -205,7 +205,7 @@ struct mevent* mevent_start(void)
         ret = mevent_start_driver(evt, driver, lib);
         if (ret != 1) wlog("init driver %s failure\n", hdf_obj_value(res));
         else evt->numevts++;
-        
+
         res = hdf_obj_next(res);
     }
 
@@ -237,7 +237,8 @@ void mevent_stop(struct mevent *evt)
 }
 
 void mevent_add_timer(struct timer_entry **timers, int timeout, bool repeat,
-                      void (*timer)(struct event_entry *e, unsigned int upsec))
+                      void (*timer)(struct event_entry *e, unsigned int upsec, void *data),
+                      void *data)
 {
     if (!timers || !timer) return;
 
@@ -247,6 +248,7 @@ void mevent_add_timer(struct timer_entry **timers, int timeout, bool repeat,
         t->repeat = repeat;
         t->timer = timer;
         t->next = *timers;
+        t->data = data;
         *timers = t;
     }
 }

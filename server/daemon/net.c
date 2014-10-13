@@ -110,7 +110,7 @@ void net_loop(void)
             &sigusr2_evt);
     signal_add(&sigusr2_evt, NULL);
 
-    struct timeval t = {.tv_sec = 1, .tv_usec = 0};
+    struct timeval t = {.tv_sec = 0, .tv_usec = 100000};
     evtimer_set(&clock_evt, clock_handler, &clock_evt);
     evtimer_add(&clock_evt, &t);
 
@@ -135,5 +135,3 @@ void net_loop(void)
     udp_close(udp_fd);
     sctp_close(sctp_fd);
 }
-
-
