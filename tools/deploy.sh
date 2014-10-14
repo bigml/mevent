@@ -3,7 +3,7 @@
 PATH=/usr/local/bin:/usr/local/sbin:/bin:/usr/bin:/usr/sbin
 
 SITE_NAME=miad
-SITE_PATH=/usr/local/miad/xy/
+SITE_PATH=/usr/local/miad/
 
 useage()
 {
@@ -72,6 +72,7 @@ EOF
 
     if [ $BINARY -eq 1 ]; then
         echo "binary ..."
+        rsync -rl /usr/local/lib root@$i:/usr/local/
         rsync ${DIR_BIN}mevent root@$i:${DIR_BIN}mevent
         rsync ${DIR_BIN}hb root@$i:${DIR_BIN}hb
         rsync ${DIR_BIN}../test/syscmd root@$i:${DIR_BIN}syscmd
