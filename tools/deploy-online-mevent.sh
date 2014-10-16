@@ -17,7 +17,7 @@ useage()
    exit -1
 }
 
-IPFILE=ip.list
+IPFILE=ip_online_mevent.list
 FRESH=0
 CONFIG=0
 BINARY=0
