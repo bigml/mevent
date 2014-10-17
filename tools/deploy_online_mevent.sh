@@ -68,7 +68,7 @@ EOF
     if [ $CONFIG -eq 1 ]; then
         echo "config file ..."
         rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/server.hdf
-        rsync ${DIR_CFG}/client.hdf root@$i:/etc/mevent/client.hdf
+		rsync ${DIR_CFG}/client_online.hdf root@$i:/etc/mevent/client.hdf
     fi
 
     if [ $BINARY -eq 1 ]; then
