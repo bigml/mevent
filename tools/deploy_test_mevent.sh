@@ -17,7 +17,7 @@ useage()
    exit -1
 }
 
-IPFILE=ip_test.mevent.list
+IPFILE=ip_test_mevent.list
 FRESH=0
 CONFIG=0
 BINARY=0
