@@ -25,7 +25,7 @@ RESTART=0
 
 DIR_BIN=${SITE_PATH}/mevent/server/daemon/
 DIR_CFG=${SITE_PATH}/xport/
-DIR_SHELL=${SITE_PATH}/tools
+DIR_SHELL=${SITE_PATH}/mevent/tools
 
 # process parameter
 while getopts 'i:ncbx' OPT; do
@@ -68,8 +68,8 @@ EOF
 
     if [ $CONFIG -eq 1 ]; then
         echo "config file ..."
-        rsync ${DIR_SHELL}/ip_online.list root@$i:${DIR_SHELL}/ip_online.list
-        rsync ${DIR_SHELL}/deploy-online-mevent.sh root@$i:${DIR_SHELL}/deploy-online-mevent.sh
+        rsync ${DIR_SHELL}/ip_online_mevent.list root@$i:${DIR_SHELL}/ip_online_mevent.list
+        rsync ${DIR_SHELL}/deploy_online_mevent.sh root@$i:${DIR_SHELL}/deploy_online_mevent.sh
         rsync ${DIR_CFG}/server.hdf root@$i:/etc/mevent/server.hdf
         rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/server_online.hdf
         rsync ${DIR_CFG}/client.hdf root@$i:/etc/mevent/client.hdf
