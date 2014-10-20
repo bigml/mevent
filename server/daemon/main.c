@@ -156,8 +156,10 @@ int main(int argc, char **argv)
 
     stats_init(&stats);
     if (config_parse_file(settings.conffname, &g_cfg) != 1) return 1;
-    mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"),
-             hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL));
+    if (!mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"),
+                  hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL)))
+        wlog("Init trace file %s failure!\n",
+             hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"));
     nerr_init();
     merr_init((MeventLog)mtc_msg);
 
