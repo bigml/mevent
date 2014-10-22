@@ -78,9 +78,9 @@ EOF
         rsync ${DIR_SHELL}/ip_online_mevent.list root@$i:${DIR_SHELL}/ip_online_mevent.list
         rsync ${DIR_SHELL}/deploy_online_mevent.sh root@$i:${DIR_SHELL}/deploy_online_mevent.sh
         rsync ${DIR_CFG}/server_test.hdf root@$i:/etc/mevent/server.hdf
-		rsync ${DIR_CFG}/client_test.hdf root@$i:/etc/mevent/client.hdf
+        rsync ${DIR_CFG}/client_test.hdf root@$i:/etc/mevent/client.hdf
         rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/server_online.hdf
-		rsync ${DIR_CFG}/client_online.hdf root@$i:/etc/mevent/client_online.hdf
+        rsync ${DIR_CFG}/client_online.hdf root@$i:/etc/mevent/client_online.hdf
     fi
 
     if [ $BINARY -eq 1 ]; then
