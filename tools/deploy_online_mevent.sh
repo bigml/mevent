@@ -7,7 +7,7 @@ SITE_PATH=/usr/local/miad/
 
 useage()
 {
-   echo "useage: $0 -i ipsfile -n -c -b -x"
+   echo "useage: $0 -i ipsfile -n -c -b -t -x"
    echo "-i ipsfile: deplopy machines ip list, default is ip.list"
    echo "-n: for fresh system, will deploy system library"
    echo "-c: deploy config file"
@@ -28,6 +28,8 @@ RESTART=0
 DIR_BIN=${SITE_PATH}/mevent/server/daemon/
 #DIR_CFG=${SITE_PATH}/xport/
 DIR_CFG=/etc/mevent
+
+BACK_DIR=$(date +%Y%m%d%H%m%S)
 
 # process parameter
 while getopts 'i:ncbtx' OPT; do
@@ -81,13 +83,17 @@ EOF
         rsync -rl /usr/local/lib root@$i:/usr/local/
         rsync ${DIR_BIN}mevent root@$i:${DIR_BIN}mevent
         rsync ${DIR_BIN}hb root@$i:${DIR_BIN}hb
-        rsync ${DIR_BIN}../test/syscmd root@$i:${DIR_BIN}syscmd
+        rsync ${DIR_BIN}syscmd root@$i:${DIR_BIN}syscmd
     fi
 
     if [ $BACKUP -eq 1 ]; then
         echo "backup ..."
         ssh root@$i > /dev/null 2>&1 <<EOF
-tar -zcvf /data/mevent_backup/mevent_$(date +%Y%m%d%H%m%S).tar.gz -C /usr/local/miad/ mevent/
+mkdir -p /data/mevent_backup/${BACK_DIR}
+cp /etc/mevent/server.hdf /data/mevent_backup/${BACK_DIR}/server.hdf
+cp /etc/mevent/client.hdf /data/mevent_backup/${BACK_DIR}/client.hdf
+tar -zcvf /data/mevent_backup/${BACK_DIR}/lib.tar.gz -C /usr/local/ lib/
+tar -zcvf /data/mevent_backup/${BACK_DIR}/mevent.tar.gz -C /usr/local/miad/ mevent/
 EOF
     fi
 
