@@ -60,6 +60,7 @@ static int load_settings(int argc, char **argv)
     settings.logfname = "-";
     settings.conffname = NULL;
     settings.smsalarm = 0;
+    settings.plugin_path = NULL;
 
     while ((c = getopt(argc, argv, "l:L:t:T:u:U:s:S:o:c:fpha?")) != -1) {
         switch(c) {
@@ -141,6 +142,28 @@ static int load_settings(int argc, char **argv)
     return 1;
 }
 
+static int load_config_settings()
+{
+    if (!g_cfg) return 0;
+
+    char *s;
+
+    s = hdf_get_value(g_cfg, PRE_CONFIG".tcp_port", NULL);
+    if (s && *s) settings.tcp_port = atoi(s);
+
+    s = hdf_get_value(g_cfg, PRE_CONFIG".udp_port", NULL);
+    if (s && *s) settings.udp_port = atoi(s);
+
+    s = hdf_get_value(g_cfg, PRE_SERVER".plugin_path", NULL);
+    if (s && *s) settings.plugin_path = strdup(s);
+
+    if (settings.foreground == 0) {
+        if (hdf_get_int_value(g_cfg, PRE_CONFIG".foreground", 0) == 1)
+            settings.foreground = 1;
+    }
+
+    return 1;
+}
 
 int main(int argc, char **argv)
 {
@@ -156,6 +179,12 @@ int main(int argc, char **argv)
 
     stats_init(&stats);
     if (config_parse_file(settings.conffname, &g_cfg) != 1) return 1;
+
+    if (!load_config_settings()) {
+        wlog("load config settings failure!\n");
+        return 1;
+    }
+
     if (!mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"),
                   hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL)))
         wlog("Init trace file %s failure!\n",

@@ -114,6 +114,7 @@ struct settings {
     char *logfname;
     int trace_level;
     char *conffname;
+    char *plugin_path;
     int smsalarm;
 };
 extern struct settings settings;
@@ -129,4 +130,3 @@ void clock_handler(const int fd, const short which, void *arg);
 size_t explode(const char split, char *input, char **tP, unsigned int limit);
 
 #endif
-

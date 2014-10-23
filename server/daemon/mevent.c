@@ -182,10 +182,11 @@ struct mevent* mevent_start(void)
     char tbuf[1024], *tp;
     struct event_driver *driver;
     HDF *res = hdf_get_obj(g_cfg, PRE_SERVER".plugins.0");
+    char *plugin_path = settings.plugin_path ? settings.plugin_path : PLUGIN_PATH;
     while (res != NULL) {
         lib = NULL; driver = NULL; memset(tbuf, 0x0, sizeof(tbuf));
 
-        snprintf(tbuf, sizeof(tbuf), "%smevent_%s.so", PLUGIN_PATH, hdf_obj_value(res));
+        snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, hdf_obj_value(res));
         //lib = dlopen(tbuf, RTLD_NOW|RTLD_GLOBAL);
         lib = dlopen(tbuf, RTLD_LAZY|RTLD_GLOBAL);
         if (lib == NULL) {

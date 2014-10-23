@@ -1,9 +1,13 @@
 Config {
     logfile = /data/logs/mevent
     trace_level = 5
+    foreground = 0
+    udp_port = 26000
+    tcp_port = 26000
 }
 
 Server {
+    plugin_path = /usr/local/lib/
     plugins {
         0 = skeleton
     }
