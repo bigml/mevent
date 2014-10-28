@@ -15,9 +15,9 @@ int main(int argc, char *argv[])
     char plugin[64] = "uic";
     int cmd;
     char key[64], val[64];
-    
+
     cmd = 100;
-    
+
     if (argc > 1) {
         strncpy(plugin, argv[1], sizeof(plugin));
     } else {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         strncpy(val, argv[4], sizeof(val));
     }
 
-    evt = mevent_init_plugin(plugin);
+    evt = mevent_init_plugin(plugin, NULL);
     hdf_set_value(evt->hdfsnd, "cachekey", key);
     hdf_set_value(evt->hdfsnd, "cacheval", val);
 

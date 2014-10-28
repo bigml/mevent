@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 {
     int ret;
 
-    mevent_t *evt = mevent_init_plugin("aic");
+    mevent_t *evt = mevent_init_plugin("aic", NULL);
     if (evt == NULL) {
         printf("init error\n");
         return 1;
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         hdf_dump(evt->hdfrcv, NULL);
     else
         printf("process failure %d\n", ret);
-    
+
     mevent_free(evt);
     return 0;
 }

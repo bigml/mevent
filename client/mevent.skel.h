@@ -116,9 +116,10 @@ int mevent_add_sctp_server(mevent_t *evt, const char *addr, int port);
  * 初始化: mevent_init()
  * 添加服务器: mevent_add_*_server()
  * 该函数会从配置文件中读取所有 ename 功能的服务器列表, 初始化,
+ * 配置文件由fname指定，否则使用默认的 /etc/mevent/client.hdf
  * 原来的 mevent_add_xxx_server() 可以继续在返回的 mevent_t 结构体下使用
  */
-mevent_t *mevent_init_plugin(char *ename);
+mevent_t *mevent_init_plugin(char *ename, char *fname);
 
 
 /*

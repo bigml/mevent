@@ -28,7 +28,7 @@
 #include "php_mevent.h"
 #include "mevent.h"
 #include "ClearSilver.h"
- 
+
 
 typedef enum {
     CNODE_TYPE_STRING = 100,
@@ -43,7 +43,7 @@ typedef enum {
     CNODE_TYPE_JS,
     CNODE_TYPE_SYMBOL,
     CNODE_TYPE_OID, /**< 12byte ObjectID (uint) */
-    
+
     CNODE_TYPE_POINT = 120,
     CNODE_TYPE_BOX,
     CNODE_TYPE_PATH,
@@ -114,7 +114,7 @@ static char* mutil_obj_attr(HDF *hdf, char*key)
 {
     if (hdf == NULL || key == NULL)
         return NULL;
-    
+
     HDF_ATTR *attr = hdf_obj_attr(hdf);
     while (attr != NULL) {
         if (!strcmp(attr->key, key)) {
@@ -138,12 +138,12 @@ static void mevent_fetch_array(HDF *node, zval **re)
         type = mutil_obj_attr(node, "type");
         if (type) ctype = atoi(type);
         else ctype = CNODE_TYPE_STRING;
-        
+
         if (hdf_obj_child(node) ||
             ctype == CNODE_TYPE_ARRAY ||
             ctype == CNODE_TYPE_OBJECT) {
             key = hdf_obj_name(node) ? hdf_obj_name(node): "unkown";
-            
+
             ALLOC_INIT_ZVAL(cre);
             array_init(cre);
             mevent_fetch_array(node, &cre);
@@ -219,7 +219,7 @@ static void mevent_fetch_array(HDF *node, zval **re)
 PHP_MINIT_FUNCTION(mevent)
 {
 
-    /* If you have INI entries, uncomment these lines 
+    /* If you have INI entries, uncomment these lines
        REGISTER_INI_ENTRIES();
     */
     le_mevent = zend_register_list_destructors_ex(
@@ -286,19 +286,19 @@ PHP_FUNCTION(mevent_init_plugin)
     int ename_len;
     long cmd;
     int flags = 0;
-     
+
     mevent_t *mevent_p;
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "s", &ename, &ename_len) == FAILURE) 
+    if (zend_parse_parameters(argc TSRMLS_CC, "s", &ename, &ename_len) == FAILURE)
         return;
 
     if (!strcmp(ename, ""))      ename       = "skeleton";
 
-    mevent_p = mevent_init_plugin(ename);
+    mevent_p = mevent_init_plugin(ename, NULL);
 
     if (mevent_p == NULL)
         RETURN_LONG(-1);
-    
+
     ZEND_REGISTER_RESOURCE(return_value, mevent_p, le_mevent);
 }
 /* }}} */
@@ -313,9 +313,9 @@ PHP_FUNCTION(mevent_free)
     zval *db = NULL;
     mevent_t *mevent_p;
     int ret = -1;
-    
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE) 
+
+    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE)
         return;
 
     if (db) {
@@ -344,10 +344,10 @@ PHP_FUNCTION(mevent_add_str)
     int ret = 0;
     zval *db = NULL;
     mevent_t *mevent_p;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rss", &db, &key, &key_len,
-                              &val, &val_len) == FAILURE) 
+                              &val, &val_len) == FAILURE)
         return;
 
     if (db) {
@@ -363,14 +363,14 @@ PHP_FUNCTION(mevent_add_str)
     }
 }
 /* }}} */
- 
+
 
 /* {{{ proto int mevent_add_int(resource db, string key, int val)
  */
 PHP_FUNCTION(mevent_add_int)
 {
     char *key = NULL;
-     
+
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     int key_len;
@@ -379,12 +379,12 @@ PHP_FUNCTION(mevent_add_int)
     int ret = 0;
     zval *db = NULL;
     mevent_t *mevent_p;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rsl", &db, &key,
                               &key_len, &val) == FAILURE)
         return;
-    
+
     if (db) {
         ZEND_FETCH_RESOURCE(mevent_p, mevent_t *, &db, db_id,
                             PHP_MEVENT_RES_NAME, le_mevent);
@@ -398,13 +398,13 @@ PHP_FUNCTION(mevent_add_int)
     }
 }
 /* }}} */
- 
+
 /* {{{ proto int mevent_add_bool(resource db, string key, int val)
  */
 PHP_FUNCTION(mevent_add_bool)
 {
     char *key = NULL;
-     
+
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     int key_len;
@@ -413,12 +413,12 @@ PHP_FUNCTION(mevent_add_bool)
     int ret = 0;
     zval *db = NULL;
     mevent_t *mevent_p;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rsl", &db, &key,
                               &key_len, &val) == FAILURE)
         return;
-    
+
     if (db) {
         ZEND_FETCH_RESOURCE(mevent_p, mevent_t *, &db, db_id,
                             PHP_MEVENT_RES_NAME, le_mevent);
@@ -432,13 +432,13 @@ PHP_FUNCTION(mevent_add_bool)
     }
 }
 /* }}} */
- 
+
 /* {{{ proto int mevent_add_float(resource db, string key, double val)
  */
 PHP_FUNCTION(mevent_add_float)
 {
     char *key = NULL;
-     
+
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     int key_len;
@@ -447,12 +447,12 @@ PHP_FUNCTION(mevent_add_float)
     int ret = 0;
     zval *db = NULL;
     mevent_t *mevent_p;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rsd", &db, &key,
                               &key_len, &val) == FAILURE)
         return;
-    
+
     if (db) {
         ZEND_FETCH_RESOURCE(mevent_p, mevent_t *, &db, db_id,
                             PHP_MEVENT_RES_NAME, le_mevent);
@@ -467,7 +467,7 @@ PHP_FUNCTION(mevent_add_float)
     }
 }
 /* }}} */
- 
+
 /* {{{ proto int mevent_trigger(resource db, string key, int cmd, int flags)
  */
 PHP_FUNCTION(mevent_trigger)
@@ -477,13 +477,13 @@ PHP_FUNCTION(mevent_trigger)
     double cmd, flags = 0;
     int db_id = -1;
     int ret = 0;
-     
-    zval *db = NULL;
-     
-    mevent_t *mevent_p;
-   
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "rsdd", &db, &key, &key_len, &cmd, &flags) == FAILURE) 
+    zval *db = NULL;
+
+    mevent_t *mevent_p;
+
+
+    if (zend_parse_parameters(argc TSRMLS_CC, "rsdd", &db, &key, &key_len, &cmd, &flags) == FAILURE)
         return;
 
     if (db) {
@@ -497,7 +497,7 @@ PHP_FUNCTION(mevent_trigger)
 }
 /* }}} */
 
- 
+
 /* {{{ proto int mevent_fetch_array(resource db)
  */
 PHP_FUNCTION(mevent_result)
@@ -505,11 +505,11 @@ PHP_FUNCTION(mevent_result)
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     zval *db = NULL;
-     
+
     //int i=0;
     mevent_t *mevent_p;
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE) 
+    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE)
         return;
 
     if (db) {
@@ -518,7 +518,7 @@ PHP_FUNCTION(mevent_result)
         if (mevent_p) {
 
             array_init(return_value);
-             
+
             if (mevent_p->hdfrcv != NULL) {
                 mevent_fetch_array(mevent_p->hdfrcv, &return_value);
             }
@@ -536,4 +536,3 @@ PHP_FUNCTION(mevent_result)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

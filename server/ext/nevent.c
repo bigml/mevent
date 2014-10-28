@@ -28,7 +28,7 @@
 #include "php_nevent.h"
 #include "mevent.h"
 #include "ClearSilver.h"
- 
+
 
 /* If you declare any globals in php_nevent.h uncomment this:
    ZEND_DECLARE_MODULE_GLOBALS(nevent)
@@ -91,7 +91,7 @@ static char* mutil_obj_attr(HDF *hdf, char*key)
 {
     if (hdf == NULL || key == NULL)
         return NULL;
-    
+
     HDF_ATTR *attr = hdf_obj_attr(hdf);
     while (attr != NULL) {
         if (!strcmp(attr->key, key)) {
@@ -160,7 +160,7 @@ static void nevent_fetch_array(HDF *node, zval **re)
 PHP_MINIT_FUNCTION(nevent)
 {
 
-    /* If you have INI entries, uncomment these lines 
+    /* If you have INI entries, uncomment these lines
        REGISTER_INI_ENTRIES();
     */
     le_nevent = zend_register_list_destructors_ex(
@@ -227,19 +227,19 @@ PHP_FUNCTION(nevent_init_plugin)
     int ename_len;
     long cmd;
     int flags = 0;
-     
+
     mevent_t *evt;
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "s", &ename, &ename_len) == FAILURE) 
+    if (zend_parse_parameters(argc TSRMLS_CC, "s", &ename, &ename_len) == FAILURE)
         return;
 
     if (!strcmp(ename, ""))      ename       = "skeleton2";
 
-    evt = mevent_init_plugin(ename);
+    evt = mevent_init_plugin(ename, NULL);
 
     if (evt == NULL)
         RETURN_LONG(-1);
-    
+
     ZEND_REGISTER_RESOURCE(return_value, evt, le_nevent);
 }
 /* }}} */
@@ -254,9 +254,9 @@ PHP_FUNCTION(nevent_free)
     zval *db = NULL;
     mevent_t *evt;
     int ret = -1;
-    
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE) 
+
+    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE)
         return;
 
     if (db) {
@@ -285,10 +285,10 @@ PHP_FUNCTION(nevent_add_str)
     int ret = 0;
     zval *db = NULL;
     mevent_t *evt;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rss", &db, &key, &key_len,
-                              &val, &val_len) == FAILURE) 
+                              &val, &val_len) == FAILURE)
         return;
 
     if (db) {
@@ -301,14 +301,14 @@ PHP_FUNCTION(nevent_add_str)
     }
 }
 /* }}} */
- 
+
 
 /* {{{ proto int nevent_add_u32(resource db, string key, int val)
  */
 PHP_FUNCTION(nevent_add_u32)
 {
     char *key = NULL;
-     
+
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     int key_len;
@@ -317,12 +317,12 @@ PHP_FUNCTION(nevent_add_u32)
     int ret = 0;
     zval *db = NULL;
     mevent_t *evt;
-   
+
 
     if (zend_parse_parameters(argc TSRMLS_CC, "rsl", &db, &key,
                               &key_len, &val) == FAILURE)
         return;
-    
+
     if (db) {
         ZEND_FETCH_RESOURCE(evt, mevent_t *, &db, db_id,
                             PHP_NEVENT_RES_NAME, le_nevent);
@@ -333,7 +333,7 @@ PHP_FUNCTION(nevent_add_u32)
     }
 }
 /* }}} */
- 
+
 /* {{{ proto int nevent_trigger(resource db, string key, int cmd, int flags)
  */
 PHP_FUNCTION(nevent_trigger)
@@ -343,13 +343,13 @@ PHP_FUNCTION(nevent_trigger)
     double cmd, flags = 0;
     int db_id = -1;
     int ret = 0;
-     
-    zval *db = NULL;
-     
-    mevent_t *evt;
-   
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "rsdd", &db, &key, &key_len, &cmd, &flags) == FAILURE) 
+    zval *db = NULL;
+
+    mevent_t *evt;
+
+
+    if (zend_parse_parameters(argc TSRMLS_CC, "rsdd", &db, &key, &key_len, &cmd, &flags) == FAILURE)
         return;
 
     if (db) {
@@ -363,7 +363,7 @@ PHP_FUNCTION(nevent_trigger)
 }
 /* }}} */
 
- 
+
 /* {{{ proto int nevent_fetch_array(resource db)
  */
 PHP_FUNCTION(nevent_result)
@@ -371,11 +371,11 @@ PHP_FUNCTION(nevent_result)
     int argc = ZEND_NUM_ARGS();
     int db_id = -1;
     zval *db = NULL;
-     
+
     //int i=0;
     mevent_t *evt;
 
-    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE) 
+    if (zend_parse_parameters(argc TSRMLS_CC, "r", &db) == FAILURE)
         return;
 
     if (db) {
@@ -384,7 +384,7 @@ PHP_FUNCTION(nevent_result)
         if (evt) {
 
             array_init(return_value);
-             
+
             if (evt->hdfrcv != NULL) {
                 nevent_fetch_array(evt->hdfrcv, &return_value);
             }
@@ -402,4 +402,3 @@ PHP_FUNCTION(nevent_result)
  * vim600: noet sw=4 ts=4 fdm=marker
  * vim<600: noet sw=4 ts=4
  */
-

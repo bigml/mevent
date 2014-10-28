@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 
     settings.smsalarm = 0;
 
-    mevent_t *evt = mevent_init_plugin(ename);
+    mevent_t *evt = mevent_init_plugin(ename, NULL);
     if (evt == NULL) {
         printf("init error\n");
         return 1;
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
         hdf_dump(evt->hdfrcv, NULL);
     } else {
         int tried = 1;
-        
+
     redo:
         string_appendf(&serror, "%d => %d; ", tried, ret);
         sleep(5);

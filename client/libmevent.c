@@ -23,12 +23,12 @@ static bool loaded = false;
 static HDF *g_cfg;
 unsigned int g_reqid = 0;
 
-static int load_config()
+static int load_config(char *fname)
 {
     NEOERR *err;
 
     if (loaded) return 1;
-    
+
     if (g_cfg != NULL) {
         hdf_destroy(&g_cfg);
     }
@@ -38,7 +38,9 @@ static int load_config()
         return 0;
     }
 
-    err = hdf_read_file(g_cfg, CONFIG_FILE);
+    if (!fname) fname = CONFIG_FILE;
+
+    err = hdf_read_file(g_cfg, fname);
     if (err != STATUS_OK) {
         nerr_ignore(&err);
         return 0;
@@ -173,7 +175,7 @@ NEOERR *merr_init(MeventLog logf)
     NEOERR *err;
 
     if (logf) mevent_log = logf;
-    
+
     if (merr_inited) return STATUS_OK;
 
     err = nerr_register(&REP_ERR, "后台处理失败");
@@ -200,7 +202,7 @@ NEOERR *merr_init(MeventLog logf)
     if (err != STATUS_OK) return nerr_pass(err);
 
     merr_inited = 1;
-    
+
     return STATUS_OK;
 }
 
@@ -220,13 +222,13 @@ mevent_t* mevent_init(char *ename)
     evt->cmd = REQ_CMD_NONE;
     evt->flags = FLAGS_NONE;
     evt->errcode = REP_OK;
-    
+
     char s[64];
     neo_rand_string(s, 60);
     evt->key = strdup(s);
 
     evt->ename = strdup(ename);
-    
+
     evt->servers = NULL;
     evt->nservers = 0;
     err = hdf_init(&evt->hdfsnd);
@@ -256,23 +258,23 @@ mevent_t* mevent_init(char *ename)
     return evt;
 }
 
-mevent_t *mevent_init_plugin(char *ename)
+mevent_t *mevent_init_plugin(char *ename, char *fname)
 {
     char *type, *ip, *nblock;
     int port;
     struct timeval tv;
-    
+
     if (!ename)    return NULL;
-    
+
     if (!loaded || g_cfg == NULL) {
-        if (load_config() != 1) {
+        if (load_config(fname) != 1) {
             return NULL;
         }
     }
 
     HDF *node = hdf_get_obj(g_cfg, ename);
     if (!node) return NULL;
-    
+
     mevent_t *evt = mevent_init(ename);
     if (!evt) return NULL;
 
@@ -284,7 +286,7 @@ mevent_t *mevent_init_plugin(char *ename)
         nblock = hdf_get_value(node, "non_block", NULL);
         tv.tv_sec = hdf_get_int_value(node, "net_timeout_s", 0);
         tv.tv_usec = hdf_get_int_value(node, "net_timeout_u", 0);
-            
+
         if (!strcmp(type, "tcp")) {
             if (!mevent_add_tcp_server(evt, ip, port, nblock, &tv)) return NULL;
         } else if (!strcmp(type, "udp")) {
@@ -313,7 +315,7 @@ void mevent_free(void *p)
 {
     mevent_t *evt = p;
     if (evt == NULL) return;
-    
+
     if (evt->servers != NULL) {
         int i;
         for (i = 0; i < evt->nservers; i++)
@@ -423,10 +425,10 @@ struct mevent_srv *select_srv(mevent_t *evt,
                               const char *key, size_t ksize)
 {
     uint32_t n;
-    
+
     if (evt->nservers == 0)
         return NULL;
-    
+
     n = checksum((const unsigned char*)key, ksize) % evt->nservers;
     return &(evt->servers[n]);
 }
@@ -440,7 +442,7 @@ int mevent_trigger(mevent_t *evt, char *key,
     unsigned int moff;
     unsigned char *p;
     uint32_t rv = REP_OK;
-    
+
     if (!evt) return REP_ERR;
 
     if (!key) key = evt->key;
@@ -453,11 +455,11 @@ int mevent_trigger(mevent_t *evt, char *key,
         evt->errcode = REP_ERR;
         return REP_ERR;
     }
-    
+
     if (g_reqid++ > 0x0FFFFFFC) {
         g_reqid = 1;
     }
-    
+
     moff = srv_get_msg_offset(srv);
     p = evt->payload + moff;
     //* (uint32_t *) p = htonl( (PROTO_VER << 28) | ID_CODE );
@@ -468,9 +470,9 @@ int mevent_trigger(mevent_t *evt, char *key,
     memcpy(p+12, evt->ename, ksize);
 
     evt->psize = moff + 12 +ksize;
-    
+
     /*
-     * don't escape the hdf because some body need set ' in param 
+     * don't escape the hdf because some body need set ' in param
      */
     vsize = pack_hdf(evt->hdfsnd, evt->payload + evt->psize, MAX_PACKET_LEN);
     evt->psize += vsize;
@@ -479,7 +481,7 @@ int mevent_trigger(mevent_t *evt, char *key,
         * (uint32_t *) (evt->payload+evt->psize) = htonl(DATA_TYPE_EOF);
         evt->psize += sizeof(uint32_t);
     }
-    
+
     t = srv_send(srv, evt->payload, evt->psize);
     if (t <= 0) {
         evt->errcode = REP_ERR_SEND;
@@ -490,7 +492,7 @@ int mevent_trigger(mevent_t *evt, char *key,
     hdf_init(&evt->hdfsnd);
     hdf_destroy(&evt->hdfrcv);
     hdf_init(&evt->hdfrcv);
-    
+
     if (flags & FLAGS_SYNC) {
         vsize = 0;
         rv = get_rep(srv, evt->rcvbuf, MAX_PACKET_LEN, &p, &vsize);
