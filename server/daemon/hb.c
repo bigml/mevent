@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
         printf("parse config file %s failure", conf);
         return 1;
     }
+
     mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile_hb", "/tmp/meventhb"),
              hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL));
     nerr_init();
@@ -59,8 +60,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    hdf_set_value(evt->hdfsnd, "user_id", "747");
-    hdf_set_value(evt->hdfsnd, "is_recommend", "1");
+    hdf_set_value(evt->hdfsnd, "ua", "Mozilla (iphone gt-)");
+    hdf_set_value(evt->hdfsnd, "sys", "iphone gt-");
 
     ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
     if (PROCESS_OK(ret)) {
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 
         if (PROCESS_NOK(ret) && tried >= trynum) {
             mtc_foo("total  error: %s, restart", serror.buf);
-            system("killall -9 mevent; sleep 2; ulimit -S -c 9999999999 && /usr/local/moon/mevent -c /usr/local/moon/server.hdf");
+            system("killall -9 mevent; sleep 2; ulimit -S -c 9999999999 && /usr/local/miad/mevent/server/daemon/mevent -c /etc/mevent/server.hdf");
         } else {
             mtc_foo("partly error: %s", serror.buf);
             hdf_dump(evt->hdfrcv, NULL);
