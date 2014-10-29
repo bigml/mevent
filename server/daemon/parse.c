@@ -15,6 +15,7 @@
 #include "smsalarm.h"
 #include "reply.h"
 
+#include "mevent.h"
 
 static void parse_stats(struct queue_entry *q);
 
@@ -104,7 +105,7 @@ static int put_in_queue_long(const struct req_info *req, int sync,
         SMS_ALARM("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
         wlog("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
         if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 2,
+            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 2,
                        "plugin %s busy, queue size %d",
                        entry->name, entry->op_queue->size);
         hdf_destroy(&hdfrcv);
@@ -116,13 +117,13 @@ static int put_in_queue_long(const struct req_info *req, int sync,
         SMS_ALARM("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
         wlog("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
         if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 3,
+            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 3,
                        "plugin %s size exceed %d", entry->name, entry->op_queue->size);
     } else if (entry->op_queue->size > QUEUE_SIZE_INFO &&
                entry->op_queue->size % 10 == 0) {
         wlog("plugin %s queue is %d\n", entry->name, entry->op_queue->size);
         if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 3,
+            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 3,
                        "plugin %s queue is %d", entry->name, entry->op_queue->size);
     }
 
