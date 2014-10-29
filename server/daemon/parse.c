@@ -97,27 +97,35 @@ static int put_in_queue_long(const struct req_info *req, int sync,
         if (sync) req->reply_mini(req, REP_ERR_UNKREQ);
         return 1;
     }
-    
 
-    if (entry->op_queue->size > QUEUE_SIZE_WARNING &&
-        entry->op_queue->size % 100 == 0) {
-        SMS_ALARM("plugin %s size exceed %d\n",
-                  entry->name, entry->op_queue->size);
-        wlog("plugin %s size exceed %d\n",
-             entry->name, entry->op_queue->size);
-    }
+
     if (entry->op_queue->size > MAX_QUEUE_ENTRY &&
         entry->op_queue->size % 100 == 0) {
-        SMS_ALARM("plugin %s busy, queue size is %d\n",
-                  entry->name, entry->op_queue->size);
-        wlog("plugin %s busy, queue size is %d\n",
-             entry->name, entry->op_queue->size);
+        SMS_ALARM("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
+        wlog("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
+        if (mevent_log)
+            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 2,
+                       "plugin %s busy, queue size %d",
+                       entry->name, entry->op_queue->size);
         hdf_destroy(&hdfrcv);
         stats.pro_busy++;
         if (sync) req->reply_mini(req, REP_ERR_BUSY);
         return 1;
+    } else if (entry->op_queue->size > QUEUE_SIZE_WARNING &&
+               entry->op_queue->size % 90 == 0) {
+        SMS_ALARM("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
+        wlog("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
+        if (mevent_log)
+            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 3,
+                       "plugin %s size exceed %d", entry->name, entry->op_queue->size);
+    } else if (entry->op_queue->size > QUEUE_SIZE_INFO &&
+               entry->op_queue->size % 10 == 0) {
+        wlog("plugin %s queue is %d\n", entry->name, entry->op_queue->size);
+        if (mevent_log)
+            mevent_log(__PRETTY_FUNCTION,__FILE__,__LINE__, 3,
+                       "plugin %s queue is %d", entry->name, entry->op_queue->size);
     }
-    
+
     e = make_queue_long_entry(req, ename, esize, hdfrcv);
     if (e == NULL) {
         return 0;
@@ -164,7 +172,7 @@ static void parse_event(struct req_info *req)
     HDF *hdfrcv = NULL;
 
     FILL_SYNC_FLAG();
-    
+
     /*
      * Request format:
      * 4        esize
@@ -222,7 +230,7 @@ int parse_message(struct req_info *req,
     }
 
     MSG_DUMP("recv: ",  buf, len);
-    
+
     /* The header is:
      * 4 bytes    Version + ID
      * 2 bytes    Command
@@ -283,4 +291,3 @@ static void parse_stats(struct queue_entry *q)
 
     return;
 }
-

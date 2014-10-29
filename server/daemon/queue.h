@@ -9,9 +9,8 @@
 
 #include "ClearSilver.h"
 
-#define QUEUE_SIZE_INFO        100
-#define QUEUE_SIZE_WARNING     1000000
-//#define MAX_QUEUE_ENTRY        1048576
+#define QUEUE_SIZE_INFO        1000
+#define QUEUE_SIZE_WARNING     100000
 #define MAX_QUEUE_ENTRY        2097152
 
 struct queue {
@@ -65,4 +64,3 @@ int queue_isempty(struct queue *q)
     __with_lock_acquired(q->lock);
 
 #endif
-
