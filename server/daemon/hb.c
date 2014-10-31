@@ -71,6 +71,9 @@ int main(int argc, char *argv[])
         int tried = 1;
 
     redo:
+        hdf_set_value(evt->hdfsnd, "ua", "Mozilla (iphone gt-)");
+        hdf_set_value(evt->hdfsnd, "sys", "iphone gt-");
+
         string_appendf(&serror, "%d => %d; ", tried, ret);
         sleep(5);
         ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
