@@ -18,25 +18,27 @@ int main(int argc, char *argv[])
 
     cmd = 100;
 
-    if (argc > 1) {
-        strncpy(plugin, argv[1], sizeof(plugin));
+    if (argc > 2) {
+        strncpy(plugin, argv[2], sizeof(plugin));
     } else {
-        printf("Usage: %s [PLUGIN] [COMMAND] [key] [val]\n", argv[0]);
+        printf("Usage: %s [CONFIG_FILE] [PLUGIN] [COMMAND] [key] [val]\n", argv[0]);
         return 1;
     }
     if (argc > 2) {
-        cmd = atoi(argv[2]);
+        cmd = atoi(argv[3]);
     }
     if (argc > 3) {
-        strncpy(key, argv[3], sizeof(key));
+        strncpy(key, argv[4], sizeof(key));
     }
     if (argc > 4) {
-        strncpy(val, argv[4], sizeof(val));
+        strncpy(val, argv[5], sizeof(val));
     }
 
-    evt = mevent_init_plugin(plugin, NULL);
+    evt = mevent_init_plugin(plugin, argv[1]);
     hdf_set_value(evt->hdfsnd, "cachekey", key);
     hdf_set_value(evt->hdfsnd, "cacheval", val);
+
+    hdf_set_value(evt->hdfsnd, "count", argv[4]);
 
     ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
     if (PROCESS_OK(ret)) {
