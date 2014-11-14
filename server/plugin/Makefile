@@ -2,8 +2,6 @@ LOCALBASE = ../../
 include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
-UNAME := $(shell uname)
-
 # prefix for installing the binaries
 PREFIX=/usr/local
 

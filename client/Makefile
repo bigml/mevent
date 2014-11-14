@@ -5,7 +5,6 @@ include $(BASEDIR)Make.env
 # prefix for installing the binaries
 PREFIX=/usr/local
 
-UNAME := $(shell uname)
 CFLAGS += -fPIC -shared
 
 # Protocols to enable

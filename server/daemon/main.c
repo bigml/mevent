@@ -6,6 +6,10 @@
 #include <string.h>        /* for strcpy() and strlen() */
 #include <pthread.h>        /* for pthread_t */
 
+#ifdef EXTEND_BY_PYTHON
+#include <Python.h>
+#endif
+
 #include "net.h"
 #include "common.h"
 #include "net-const.h"
@@ -168,6 +172,10 @@ static int load_config_settings()
 int main(int argc, char **argv)
 {
     pid_t pid;
+
+#ifdef EXTEND_BY_PYTHON
+    if (!Py_IsInitialized()) {;}
+#endif
 
     if (!load_settings(argc, argv))
         return 1;
