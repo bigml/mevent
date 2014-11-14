@@ -17,7 +17,7 @@ OBJ_PLUGIN = $(patsubst %.c, %.o, $(SOURCES))
 
 all: $(LIB_PLUGIN)
 
-mevent_%.so: private/%_internal.c private/%_timer.c mevent_%.c
+mevent_%.so: private/%_*.c mevent_%.c
 	@echo "$(CC) -o $@"
 ifeq ($(UNAME), Darwin)
 	@$(CC) $(CFLAGS) -c $< -o $(patsubst %.c, %.o, $<)
