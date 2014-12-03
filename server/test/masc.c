@@ -36,7 +36,17 @@ int main(int argc, char *argv[])
 
     evt = mevent_init_plugin(plugin, argv[1]);
 
-    hdf_set_value(evt->hdfsnd, "slotid", "1");
+    hdf_set_value(evt->hdfsnd, "boardid", "27");
+    hdf_set_value(evt->hdfsnd, "ptype", "1");
+    hdf_set_value(evt->hdfsnd, "cid", "1");
+    hdf_set_value(evt->hdfsnd, "hid", "1");
+    hdf_set_value(evt->hdfsnd, "videoid", "1");
+    hdf_set_value(evt->hdfsnd, "sub_type", "1");
+    hdf_set_value(evt->hdfsnd, "clip_type", "1");
+    hdf_set_value(evt->hdfsnd, "deviceid", "1");
+    hdf_set_value(evt->hdfsnd, "on_year", "1");
+    hdf_set_value(evt->hdfsnd, "keyword", "1");
+
     hdf_set_value(evt->hdfsnd, "userid", "2");
     hdf_set_value(evt->hdfsnd, "ptype", "3");
     hdf_set_value(evt->hdfsnd, "cid", "333");

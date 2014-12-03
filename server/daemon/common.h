@@ -97,6 +97,11 @@
         ret = hdf_get_obj(hdf, key);            \
     } while (0)
 
+#define REQ_FETCH_PARAM_CHILD(hdf, key, ret)      \
+        do {                                      \
+            ret = hdf_get_child(hdf, key);        \
+        } while (0)
+
 extern struct mevent *mevent;
 
 /* Settings */
