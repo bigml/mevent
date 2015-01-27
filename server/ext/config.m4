@@ -22,21 +22,21 @@ if test "$PHP_MEVENT" != "no"; then
       fi
     done
   fi
- 
+
   if test -z "$MEVENT_DIR"; then
     AC_MSG_RESULT([not found])
     AC_MSG_ERROR([Please reinstall the mevent distribution])
   fi
 
-   
-  
+
+
  PHP_ADD_INCLUDE($MEVENT_DIR/include)
-    
- 
-   
-  LIBNAME=mevent # you may want to change this
-  LIBSYMBOL=printf # you most likely want to change this 
- 
+
+
+
+  LIBNAME=neo_utl # you may want to change this
+  LIBSYMBOL=printf # you most likely want to change this
+
   PHP_CHECK_LIBRARY($LIBNAME,$LIBSYMBOL,
   [
     PHP_ADD_LIBRARY_WITH_PATH($LIBNAME, $MEVENT_DIR/lib, MEVENT_SHARED_LIBADD)
@@ -44,9 +44,9 @@ if test "$PHP_MEVENT" != "no"; then
   ],[
     AC_MSG_ERROR([wrong mevent lib version or lib not found .mevent default dir is $MEVENT_DIR])
   ],[
-    -L$MEVENT_DIR/lib -lm -ldl   
+    -L$MEVENT_DIR/lib -lm -ldl
   ])
- 
+
   PHP_SUBST(MEVENT_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(mevent, mevent.c, $ext_shared)
