@@ -78,7 +78,7 @@ void select_ott_random_video(HASH **video)
     uListGet(videos, g_random_int_range(0, uListLength(videos)), (void **) video);
 }
 
-HDF *read_player_advertising_wrapper(mevent_t *evt, HASH *player, HASH *user, HASH *video)
+void read_player_advertising_wrapper(mevent_t *evt, HASH *player, HASH *user, HASH *video)
 {
     char *boardid = (char *) hash_lookup(player, "boardid");
     hdf_set_value(evt->hdfsnd, "boardid", boardid);
@@ -109,12 +109,27 @@ HDF *read_player_advertising_wrapper(mevent_t *evt, HASH *player, HASH *user, HA
 
     mevent_trigger(evt, NULL, 1001, FLAGS_SYNC);
 
-    return evt->hdfrcv;
+    HDF  *attachment  = NULL;
+    HDF  *spot        = NULL;
+    HDF  *destination = evt->hdfrcv;
+    char *delivery_id = NULL;
+
+    attachment = hdf_obj_child(destination);
+    while (attachment != NULL) {
+        spot = hdf_get_child(attachment, "spots");
+        while (spot != NULL) {
+            delivery_id = hdf_get_value(spot, "delivery.delivery_id", "0");
+            g_print("candidate delivery id is %s\n", delivery_id);
+
+            spot = hdf_obj_next(spot);
+        }
+
+        attachment = hdf_obj_next(attachment);
+    }
 }
 
 void read_ott_player_advertising_unittest(mevent_t *evt)
 {
-    HDF *result = NULL;
     HASH *selected_player = NULL;
     HASH *selected_user   = NULL;;
     HASH *selected_video  = NULL;
@@ -123,7 +138,7 @@ void read_ott_player_advertising_unittest(mevent_t *evt)
     select_ott_random_user(&selected_user);
     select_ott_random_video(&selected_video);
 
-    result = read_player_advertising_wrapper(
+    read_player_advertising_wrapper(
         evt, selected_player, selected_user, selected_video
     );
 }
@@ -147,7 +162,7 @@ int main(int argc, char *argv[])
     }
 
     if (argv[1] == NULL) {
-        fname = g_strdup_printf("%s", "/home/ml/miad/xport/client_dev_ml.hdf");
+        fname = g_strdup_printf("%s", "/home/ml/miad/xport/client_dev_bc.hdf");
     } else {
         fname = argv[1];
     }
