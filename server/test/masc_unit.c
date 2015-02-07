@@ -121,6 +121,16 @@ void read_player_advertising_wrapper(mevent_t *evt, HASH *player, HASH *user, HA
             delivery_id = hdf_get_value(spot, "delivery.delivery_id", "0");
             g_print("candidate delivery id is %s\n", delivery_id);
 
+            /* FIXME: 触发上报事件会退出程序 */
+            /*
+             * 由于无法从返回报文中获知投放的流量类型，因此此处假定所有
+             * 的广告流量类型为 cpm
+             */
+            hdf_set_value(evt->hdfsnd, "cardid", delivery_id);
+            hdf_set_value(evt->hdfsnd, "type", "1");
+            hdf_set_value(evt->hdfsnd, "deviceid", userid);
+            mevent_trigger(evt, NULL, 1011, FLAGS_SYNC);
+
             spot = hdf_obj_next(spot);
         }
 
