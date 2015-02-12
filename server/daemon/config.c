@@ -17,13 +17,17 @@
 
 int config_parse_file(const char *file, HDF **cfg)
 {
+    bool readok = true;
     NEOERR *err;
 
     err = hdf_init(cfg);
     RETURN_V_NOK(err, 0);
-    
+
     err = hdf_read_file(*cfg, file);
-    RETURN_V_NOK(err, 0);
+    if (err != STATUS_OK) readok = false;
+    OUTPUT_NOK(err);
+
+    if (!readok) return 0;
 
     return 1;
 }
