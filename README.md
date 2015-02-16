@@ -96,6 +96,7 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
   enum {
       DATA_TYPE_EOF = 0,
       DATA_TYPE_U32,
+      DATA_TYPE_ULONG,
       DATA_TYPE_STRING,
       DATA_TYPE_ARRAY
   };
@@ -112,7 +113,7 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
 
 *   variable value/ variable value length/ array count (variable length)
 ```c
-  if (variable type == DATA_TYPE_U32)
+  if (variable type == DATA_TYPE_U32 || type == DATA_TYPE_ULONG)
       this means variable value
   else if (variable type == DATA_TYPE_STRING)
       this means variable value length
