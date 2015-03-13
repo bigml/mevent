@@ -108,6 +108,7 @@ EOF
         echo "restart ..."
         ssh root@$i > /dev/null 2>&1 <<EOF
 killall mevent
+sleep 2
 ${SITE_PATH}/mevent/server/daemon/mevent -c /etc/mevent/server.hdf >> /tmp/meventstart 2>&1
 EOF
     fi

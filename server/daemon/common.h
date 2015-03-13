@@ -22,6 +22,14 @@
         ret = hdf_get_int_value(hdf, key, 0);                       \
     } while (0)
 
+#define REQ_GET_PARAM_INT64(hdf, key, ret)                          \
+    do {                                                            \
+        if (!hdf_get_value(hdf, key, NULL)) {                       \
+            return nerr_raise(REP_ERR_BADPARAM, "need %s", key);    \
+        }                                                           \
+        ret = mcs_get_int64_value(hdf, key, 0);                     \
+    } while (0)
+
 #define REQ_GET_PARAM_FLOAT(hdf, key, ret)                          \
     do {                                                            \
         if (!hdf_get_value(hdf, key, NULL)) {                       \
