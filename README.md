@@ -96,6 +96,7 @@ Most code stolen from [nmdb](https://blitiri.com.ar/p/nmdb/), thanks alot.
   enum {
       DATA_TYPE_EOF = 0,
       DATA_TYPE_U32,
+      DATA_TYPE_ULONG,
       DATA_TYPE_STRING,
       DATA_TYPE_ARRAY
   };
@@ -138,9 +139,17 @@ And, it's value is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf) f
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |                          Reply Code                           |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    |                             vsize                             |
+    |                             len                               |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    :                              val                              :
+    :                          var.type                             :
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           name.len                            |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                             name                              |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                            vsize                              |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                             val                               |
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 *   Request ID (32 bits)
@@ -154,6 +163,29 @@ And, it's value is a [hdf string](http://www.clearsilver.net/docs/man_hdf.hdf) f
     - REP_ERR_xxx        14 ~ 24  (system level error)
     - REP_ERR_APP_xxx    25 ~ 999 (business level error)
     - REP_OK_xxx         > 1000   (process ok)
+
+*   len (32 bits)
+    len = Request ID(32 bits) + Reply Code(32 bits) + len (32 bits) + body len
+
+##### request body #####
+
+*   variable type (32 bits)
+```c
+  enum {
+      DATA_TYPE_EOF = 0,
+      DATA_TYPE_U32,
+      DATA_TYPE_ULONG,
+      DATA_TYPE_STRING,
+      DATA_TYPE_ARRAY
+  };
+```
+    type = 4 (DATA_TYPE_STRING)
+
+*   name len (32 bits)
+    name len = 4 name is root
+
+*   name 
+    name is root
 
 *   vsize (optional, 32 bits)
 
