@@ -80,7 +80,7 @@ EOF
         rsync ${DIR_CFG}/server_test.hdf root@$i:/etc/mevent/server.hdf
         rsync ${DIR_CFG}/client_test.hdf root@$i:/etc/mevent/client.hdf
         rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/server_online.hdf
-        rsync ${DIR_CFG}/client_online.hdf root@$i:/etc/mevent/client_online.hdf
+        rsync ${DIR_CFG}/client_forserver_online.hdf root@$i:/etc/mevent/client_forserver_online.hdf
     fi
 
     if [ $BINARY -eq 1 ]; then
