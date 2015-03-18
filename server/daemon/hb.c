@@ -25,6 +25,23 @@
 
 #include "ClearSilver.h"
 
+void set_param(HDF *node)
+{
+    if (!node) return;
+
+    hdf_set_value(node, "boardid", "4820");
+    hdf_set_value(node, "ptype", "100");
+    hdf_set_value(node, "videoid", "1116403");
+    hdf_set_value(node, "posid", "1156130200");
+    hdf_set_value(node, "deviceid", "mgtvmac0066CE02E7EC");
+    hdf_set_value(node, "v.id", "1116403");
+    hdf_set_value(node, "v.classification", "电影");
+    hdf_set_value(node, "v.collection", "约会之夜");
+    hdf_set_value(node, "v.type", "喜剧，犯罪");
+    hdf_set_value(node, "v.year", "2010");
+    hdf_set_value(node, "v.pianyuan", "1");
+}
+
 int main(int argc, char *argv[])
 {
     STRING serror; string_init(&serror);
@@ -60,8 +77,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    hdf_set_value(evt->hdfsnd, "ua", "Mozilla (iphone gt-)");
-    hdf_set_value(evt->hdfsnd, "sys", "iphone gt-");
+    set_param(evt->hdfsnd);
 
     ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
     if (PROCESS_OK(ret)) {
@@ -71,8 +87,7 @@ int main(int argc, char *argv[])
         int tried = 1;
 
     redo:
-        hdf_set_value(evt->hdfsnd, "ua", "Mozilla (iphone gt-)");
-        hdf_set_value(evt->hdfsnd, "sys", "iphone gt-");
+        set_param(evt->hdfsnd);
 
         string_appendf(&serror, "%d => %d; ", tried, ret);
         sleep(5);
