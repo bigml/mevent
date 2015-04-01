@@ -426,8 +426,10 @@ struct mevent_srv *select_srv(mevent_t *evt,
 {
     uint32_t n;
 
-    if (evt->nservers == 0)
+    if (evt->nservers <= 0)
         return NULL;
+
+    if (!key || ksize <= 0) return &(evt->servers[neo_rand(evt->nservers - 1)]);
 
     n = checksum((const unsigned char*)key, ksize) % evt->nservers;
     return &(evt->servers[n]);
@@ -445,12 +447,11 @@ int mevent_trigger(mevent_t *evt, char *key,
 
     if (!evt) return REP_ERR;
 
-    if (!key) key = evt->key;
     evt->cmd = cmd;
     evt->flags = flags;
     ksize = strlen(evt->ename);
 
-    srv = select_srv(evt, key, strlen(key));
+    srv = select_srv(evt, key, key ? strlen(key) : 0);
     if (!srv) {
         evt->errcode = REP_ERR;
         return REP_ERR;
