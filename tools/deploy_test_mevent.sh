@@ -12,7 +12,6 @@ useage()
    echo "-n: for fresh system, will deploy system library"
    echo "-c: deploy config file"
    echo "-b: deploy binary file"
-   echo "-t: backup to dir /data/mevent_backup *.tar.gz"
    echo "-x: restart binary"
    echo "example: $0 -bx"
    exit -1
@@ -22,12 +21,11 @@ IPFILE=ip_test_mevent.list
 FRESH=0
 CONFIG=0
 BINARY=0
-BACKUP=0
 RESTART=0
 
 DIR_BIN=${SITE_PATH}/mevent/server/daemon/
-DIR_CFG=${SITE_PATH}/xport/
 DIR_SHELL=${SITE_PATH}/mevent/tools
+DIR_CFG=${SITE_PATH}/xport/
 
 BACK_DIR=$(date +%Y%m%d%H%m%S)
 
@@ -42,8 +40,6 @@ while getopts 'i:ncbtx' OPT; do
             CONFIG=1;;
         b)
             BINARY=1;;
-        t)
-            BACKUP=1;;
         x)
             RESTART=1;;
         ?)
@@ -64,7 +60,6 @@ mkdir -p $DIR_BIN
 mkdir -p /var/log/moon/${SITE_NAME}/
 mkdir -p $DIR_SHELL
 mkdir -p /etc/mevent
-mkdir -p /data/mevent_backup
 if ! grep '/usr/local/lib' /etc/ld.so.conf > /dev/null 2>&1
 then
     echo "/usr/local/lib" >> /etc/ld.so.conf
@@ -75,13 +70,14 @@ EOF
 
     if [ $CONFIG -eq 1 ]; then
         echo "config file ..."
-        rsync ${DIR_SHELL}/ip_online_mevent.list root@$i:${DIR_SHELL}/ip_online_mevent.list
-        rsync ${DIR_SHELL}/deploy_online_mevent.sh root@$i:${DIR_SHELL}/deploy_online_mevent.sh
+        rsync ${DIR_SHELL}/ip_online_mevent.list root@$i:${DIR_SHELL}/
+        rsync ${DIR_SHELL}/deploy_online_mevent.sh root@$i:${DIR_SHELL}/
         rsync ${DIR_SHELL}/release.sh root@$i:${DIR_SHELL}/release.sh
+
         rsync ${DIR_CFG}/server_test.hdf root@$i:/etc/mevent/server.hdf
-        rsync ${DIR_CFG}/client_test.hdf root@$i:/etc/mevent/client.hdf
-        rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/server_online.hdf
-        rsync ${DIR_CFG}/client_forserver_online.hdf root@$i:/etc/mevent/client_forserver_online.hdf
+        rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/
+        rsync ${DIR_CFG}/server_bakstation.hdf root@$i:/etc/mevent/
+        rsync ${DIR_CFG}/client_forserver_online.hdf root@$i:/etc/mevent/
     fi
 
     if [ $BINARY -eq 1 ]; then
@@ -90,19 +86,6 @@ EOF
         rsync ${DIR_BIN}mevent root@$i:${DIR_BIN}mevent
         rsync ${DIR_BIN}hb root@$i:${DIR_BIN}hb
         rsync ${DIR_BIN}../test/syscmd root@$i:${DIR_BIN}syscmd
-    fi
-
-    if [ $BACKUP -eq 1 ]; then
-        echo "backup ..."
-        ssh root@$i > /dev/null 2>&1 <<EOF
-mkdir -p /data/mevent_backup/${BACK_DIR}
-cp /etc/mevent/server.hdf /data/mevent_backup/${BACK_DIR}/server.hdf
-cp /etc/mevent/client.hdf /data/mevent_backup/${BACK_DIR}/client.hdf
-cp /etc/mevent/server_online.hdf /data/mevent_backup/${BACK_DIR}/server_online.hdf
-cp /etc/mevent/client_online.hdf /data/mevent_backup/${BACK_DIR}/client_online.hdf
-tar -zcvf /data/mevent_backup/${BACK_DIR}/lib.tar.gz -C /usr/local/ lib/
-tar -zcvf /data/mevent_backup/${BACK_DIR}/mevent.tar.gz -C /usr/local/miad/ mevent/
-EOF
     fi
 
     if [ $RESTART -eq 1 ]; then
