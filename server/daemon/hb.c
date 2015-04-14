@@ -32,8 +32,12 @@ void set_param(HDF *node)
     hdf_set_value(node, "boardid", "4820");
     hdf_set_value(node, "ptype", "100");
     hdf_set_value(node, "videoid", "1116403");
+    hdf_set_value(node, "vtt", "1200");
     hdf_set_value(node, "posid", "1156130200");
+
     hdf_set_value(node, "deviceid", "mgtvmac0066CE02E7EC");
+    hdf_set_value(node, "ip", "61.187.53.134");
+
     hdf_set_value(node, "v.id", "1116403");
     hdf_set_value(node, "v.classification", "电影");
     hdf_set_value(node, "v.collection", "约会之夜");
