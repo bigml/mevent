@@ -92,7 +92,7 @@ static void rep_send_error(const struct req_info *req, const unsigned int code)
     memcpy(minibuf + 12, &c, 4);
 
     MSG_DUMP("send: ",  minibuf, 4 * 4);
-    
+
     /* If this send fails, there's nothing to be done */
     r = send(req->fd, minibuf, 4 * 4, 0);
 
@@ -112,7 +112,7 @@ static int rep_send(const struct req_info *req, const unsigned char *buf,
         return 1;
 
     MSG_DUMP("send: ",  buf, size);
-    
+
     c = 0;
     while (c < size) {
         rv = send(req->fd, buf + c, size - c, 0);
@@ -476,5 +476,3 @@ error_exit:
     return;
 
 }
-
-

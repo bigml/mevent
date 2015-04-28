@@ -153,10 +153,10 @@ static int load_config_settings()
     char *s;
 
     s = hdf_get_value(g_cfg, PRE_CONFIG".tcp_port", NULL);
-    if (s && *s) settings.tcp_port = atoi(s);
+    if (s && *s && settings.tcp_port == -1) settings.tcp_port = atoi(s);
 
     s = hdf_get_value(g_cfg, PRE_CONFIG".udp_port", NULL);
-    if (s && *s) settings.udp_port = atoi(s);
+    if (s && *s && settings.udp_port == -1) settings.udp_port = atoi(s);
 
     s = hdf_get_value(g_cfg, PRE_SERVER".plugin_path", NULL);
     if (s && *s) settings.plugin_path = strdup(s);
