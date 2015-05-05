@@ -429,7 +429,8 @@ struct mevent_srv *select_srv(mevent_t *evt,
     if (evt->nservers <= 0)
         return NULL;
 
-    if (!key || ksize <= 0) return &(evt->servers[neo_rand(evt->nservers - 1)]);
+    /* neo_rand(max) return rand integer between [0, max) */
+    if (!key || ksize <= 0) return &(evt->servers[neo_rand(evt->nservers)]);
 
     n = checksum((const unsigned char*)key, ksize) % evt->nservers;
     return &(evt->servers[n]);

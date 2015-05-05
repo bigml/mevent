@@ -124,25 +124,6 @@ static int load_settings(int argc, char **argv)
         }
     }
 
-    if (settings.tipc_lower == -1)
-        settings.tipc_lower = TIPC_SERVER_INST;
-    if (settings.tipc_upper == -1)
-        settings.tipc_upper = settings.tipc_lower;
-    if (settings.tcp_addr == NULL)
-        settings.tcp_addr = TCP_SERVER_ADDR;
-    if (settings.tcp_port == -1)
-        settings.tcp_port = TCP_SERVER_PORT;
-    if (settings.udp_addr == NULL)
-        settings.udp_addr = UDP_SERVER_ADDR;
-    if (settings.udp_port == -1)
-        settings.udp_port = UDP_SERVER_PORT;
-    if (settings.sctp_addr == NULL)
-        settings.sctp_addr = SCTP_SERVER_ADDR;
-    if (settings.sctp_port == -1)
-        settings.sctp_port = SCTP_SERVER_PORT;
-    if (settings.conffname == NULL)
-        settings.conffname = CONFIG_FILENAME;
-
     return 1;
 }
 
@@ -169,6 +150,28 @@ static int load_config_settings()
     return 1;
 }
 
+static void load_default_settings()
+{
+    if (settings.tipc_lower == -1)
+        settings.tipc_lower = TIPC_SERVER_INST;
+    if (settings.tipc_upper == -1)
+        settings.tipc_upper = settings.tipc_lower;
+    if (settings.tcp_addr == NULL)
+        settings.tcp_addr = TCP_SERVER_ADDR;
+    if (settings.tcp_port == -1)
+        settings.tcp_port = TCP_SERVER_PORT;
+    if (settings.udp_addr == NULL)
+        settings.udp_addr = UDP_SERVER_ADDR;
+    if (settings.udp_port == -1)
+        settings.udp_port = UDP_SERVER_PORT;
+    if (settings.sctp_addr == NULL)
+        settings.sctp_addr = SCTP_SERVER_ADDR;
+    if (settings.sctp_port == -1)
+        settings.sctp_port = SCTP_SERVER_PORT;
+    if (settings.conffname == NULL)
+        settings.conffname = CONFIG_FILENAME;
+}
+
 int main(int argc, char **argv)
 {
     pid_t pid;
@@ -192,6 +195,8 @@ int main(int argc, char **argv)
         wlog("load config settings failure!\n");
         return 1;
     }
+
+    load_default_settings();
 
     if (!mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"),
                   hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL)))

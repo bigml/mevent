@@ -55,27 +55,21 @@ int main(int argc, char *argv[])
     int trynum = 5;
 
     if (argc != 4) {
-        printf("Usage: %s EVENT_NAME CMD CONFIG_FILE\n", argv[0]);
+        printf("Usage: %s CLIENT_CONFIG_FILE EVENT_NAME CMD\n", argv[0]);
         return 1;
     }
 
-    ename = argv[1];
-    cmd = atoi(argv[2]);
-    conf = argv[3];
+    conf = argv[1];
+    ename = argv[2];
+    cmd = atoi(argv[3]);
 
-    if (config_parse_file(conf, &g_cfg) != 1) {
-        printf("parse config file %s failure", conf);
-        return 1;
-    }
-
-    mtc_init(hdf_get_value(g_cfg, PRE_CONFIG".logfile_hb", "/tmp/meventhb"),
-             hdf_get_int_value(g_cfg, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL));
+    mtc_init("/tmp/meventhb", 7);
     nerr_init();
     merr_init((MeventLog)mtc_msg);
 
     settings.smsalarm = 0;
 
-    mevent_t *evt = mevent_init_plugin(ename, NULL);
+    mevent_t *evt = mevent_init_plugin(ename, conf);
     if (evt == NULL) {
         printf("init error\n");
         return 1;

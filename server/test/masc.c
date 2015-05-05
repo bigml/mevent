@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
     count_total = count_ok + count_fai;
     mtimer_stop(NULL);
 
-    mtc_foo("total %d, success %d, failure %d, %d per second",
-            count_total, count_ok, count_fai,
-            (int)((count_total * 1.0 / elapsed) * 1000000));
+    printf("total %d, success %d, failure %d, %d per second\n",
+           count_total, count_ok, count_fai,
+           (int)((count_total * 1.0 / elapsed) * 1000000));
 
     mevent_free(evt);
 
