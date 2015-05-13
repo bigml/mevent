@@ -1,7 +1,7 @@
 /*
  * 事件中心心跳检测重启程序, 需配合 crontab 定时拉起使用
  * 程序本身得错误信息printf，后台的状态输出到日志文件
- * PATH/hb uic 1001 /usr/local/moon/mevent.hdf > /tmp/meventhb.log
+ * PATH/hb /etc/mevent/client.hdf uic 1001 > /tmp/meventhb.log
  *
  * 正常情况下 输出 后端插件的返回信息
  */

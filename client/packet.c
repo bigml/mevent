@@ -12,11 +12,11 @@ size_t unpack_data_str(unsigned char *buf, size_t len, char **val)
     const unsigned char *mykey;
     uint32_t ksize, vtype, vsize, ttsize;
     unsigned char *pos;
-    
+
     if (!buf) return 0;
 
     pos = buf;
-    
+
     vtype = * (uint32_t *) pos; vtype = ntohl(vtype);
     ttsize = sizeof(uint32_t);
 
@@ -30,7 +30,7 @@ size_t unpack_data_str(unsigned char *buf, size_t len, char **val)
 
     pos = pos + ksize;
     ttsize += ksize + 2*sizeof(uint32_t);
-    
+
     vsize = * (uint32_t *) pos; vsize = ntohl(vsize);
     pos = pos + sizeof(uint32_t);
 
@@ -46,7 +46,7 @@ size_t unpack_hdf(unsigned char *buf, size_t len, HDF **hdf)
 {
     size_t ttsize;
     char *val = NULL;
-    
+
     if (!buf || !hdf) return 0;
 
     hdf_destroy(hdf);
@@ -68,13 +68,13 @@ size_t pack_data_str(const char *key, const char *val, unsigned char *buf, size_
     if (vsize > len - RESERVE_SIZE) {
         vsize = len - RESERVE_SIZE;
     }
-    
+
     * (uint32_t *) buf = htonl(DATA_TYPE_STRING);
     * ((uint32_t *) buf + 1) = htonl(ksize);
     memcpy(buf+8, key, ksize);
     * ((uint32_t *) (buf + 8 + ksize)) = htonl(vsize);
     if (vsize > 0) memcpy(buf+8+ksize+4, val, vsize);
-    
+
     *(buf+8+ksize+4 + vsize) = '\0';
 
     return (8 + ksize + 4 + vsize);
@@ -84,9 +84,9 @@ size_t pack_hdf(HDF *hdf, unsigned char *buf, size_t len)
 {
     size_t vsize;
     char *p;
-    
+
     if (!hdf || !buf) return 0;
-    
+
     NEOERR *err = hdf_write_string(hdf, &p);
     if (err != STATUS_OK) return 0;
 
@@ -96,6 +96,6 @@ size_t pack_hdf(HDF *hdf, unsigned char *buf, size_t len)
 
     * (uint32_t *) (buf+vsize) = htonl(DATA_TYPE_EOF);
     vsize += sizeof(uint32_t);
-    
+
     return vsize;
 }
