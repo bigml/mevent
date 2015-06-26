@@ -5,7 +5,6 @@
 #include <stdint.h>        /* for int64_t */
 #include <stdbool.h>
 #include "queue.h"
-#define MAX_THREAD 16
 
 /*
  * private, internal use
@@ -38,8 +37,7 @@ struct event_entry {
      */
     //void *lib;        /* for dlopen() */
     struct queue *op_queue;
-    int numofthread;
-    pthread_t *op_thread[MAX_THREAD];
+    pthread_t *op_thread;
     int loop_should_stop;
     struct event_entry *prev;
     struct event_entry *next;

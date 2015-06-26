@@ -5,7 +5,6 @@
 static void skeleton_process_driver(EventEntry *entry, QueueEntry *q)
 {
     struct skeleton_entry *e = (struct skeleton_entry*)entry;
-    HDF *node;
     NEOERR *err = NULL;
     int ret;
 
@@ -25,11 +24,8 @@ static void skeleton_process_driver(EventEntry *entry, QueueEntry *q)
         mcs_set_int64_value(q->hdfsnd, "msg_stats", st->msg_stats);
         mcs_set_int64_value(q->hdfsnd, "proc_suc", st->proc_suc);
         mcs_set_int64_value(q->hdfsnd, "proc_fai", st->proc_fai);
-        for (int i = 0; i < entry->numofthread; i++) {
-	    node = mcs_fetch_nodef(q->hdfsnd, "thread.%d", i);
-	    mcs_set_int64_value(node, "queue_size", entry->op_queue->size);
-	}
-	break;
+        mcs_set_int64_value(q->hdfsnd, "queue_size", entry->op_queue->size);
+        break;
     default:
         st->msg_unrec++;
         err = nerr_raise(REP_ERR_UNKREQ, "unknown command %u", q->operation);
