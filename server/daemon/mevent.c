@@ -98,27 +98,30 @@ static void mevent_stop_driver(struct event_entry *e)
 {
     if (e == NULL) return;
 
-    //dlclose(e->lib);
     e->loop_should_stop = 1;
     e->stop_driver(e);
-    pthread_join(*(e->op_thread), NULL);
-    free(e->op_thread);
+    for (int i = 0; i < e->numofthread; i++) {
+        pthread_join(*(e->op_thread[i]), NULL);
+	free(e->op_thread[i]);
+    }
     queue_free(e->op_queue);
     if (e->name != NULL) free(e->name);
     free(e);
 }
 
-static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void *lib)
+static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void *lib, int numofthread)
 {
     if (evt == NULL || evt->table == NULL || d == NULL) return 0;
 
     struct event_entry *e = d->init_driver();
     if (e == NULL) return 0;
 
-    //e->lib = lib;
+    e->numofthread = numofthread;
     e->op_queue = queue_create();
-    e->op_thread = malloc(sizeof(pthread_t));
-    pthread_create(e->op_thread, NULL, mevent_start_base_entry, (void*)e);
+    for (int i = 0; i < e->numofthread; i++) {
+        e->op_thread[i] = malloc(sizeof(pthread_t));
+	pthread_create(e->op_thread[i], NULL, mevent_start_base_entry, (void*)e);
+    }
 
     uint32_t h;
     struct event_chain *c;
@@ -174,40 +177,42 @@ struct mevent* mevent_start(void)
 
     evt->numevts = 0;
     evt->chainlen = 1000000;
-    //evt->hashlen = evt->numevts / evt->chainlen;
     evt->hashlen = 16;
     evt->table = calloc(evt->hashlen, sizeof(struct event_chain));
 
     void *lib;
     char tbuf[1024], *tp;
     struct event_driver *driver;
+    int numofthread;
+    int numofplugins = 0;
     HDF *res = hdf_get_obj(g_cfg, PRE_SERVER".plugins.0");
     char *plugin_path = settings.plugin_path ? settings.plugin_path : PLUGIN_PATH;
     while (res != NULL) {
         lib = NULL; driver = NULL; memset(tbuf, 0x0, sizeof(tbuf));
 
-        snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, hdf_obj_value(res));
-        //lib = dlopen(tbuf, RTLD_NOW|RTLD_GLOBAL);
+        snprintf(tbuf, sizeof(tbuf), "%s.plugins.%d.numofthread", PRE_SERVER, numofplugins);
+	numofthread = hdf_get_int_value(g_cfg, tbuf, 1);
+	snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, hdf_get_value(res, "name", ".plugins.0.name"));
         lib = dlopen(tbuf, RTLD_LAZY|RTLD_GLOBAL);
         if (lib == NULL) {
             wlog("open driver %s failure %s\n", tbuf, dlerror());
             res = hdf_obj_next(res);
             continue;
         }
-
-        snprintf(tbuf, sizeof(tbuf), "%s_driver", hdf_obj_value(res));
-        driver = (struct event_driver*)dlsym(lib, tbuf);
+        
+        snprintf(tbuf, sizeof(tbuf), "%s_driver", hdf_get_value(res, "name", ".plugins.0.name"));
+	driver = (struct event_driver*)dlsym(lib, tbuf);
         if ((tp = dlerror()) != NULL) {
             wlog("find symbol %s failure %s\n", tbuf, tp);
             res = hdf_obj_next(res);
             continue;
         }
 
-        ret = mevent_start_driver(evt, driver, lib);
-        if (ret != 1) wlog("init driver %s failure\n", hdf_obj_value(res));
-        else evt->numevts++;
-
-        res = hdf_obj_next(res);
+        ret = mevent_start_driver(evt, driver, lib, numofthread);
+	if (ret != 1) wlog("init driver %s failure\n", hdf_get_value(res, "name", ".plugins.0.name"));
+	else evt->numevts++;
+	
+	res = hdf_obj_next(res);
     }
 
     return evt;
