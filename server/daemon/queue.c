@@ -56,7 +56,7 @@ void queue_free(struct queue *q)
 size_t queue_entry_size(struct queue_entry *e)
 {
     if (e == NULL) return 0;
-    
+
     size_t rv = sizeof(struct queue_entry);
     rv += e->esize;
     rv += sizeof(struct req_info);
@@ -102,6 +102,10 @@ struct queue_entry *queue_entry_create(void)
     e->esize = 0;
     e->hdfrcv = NULL;            /* hdfrcv inited in parse_event() */
     hdf_init(&e->hdfsnd);
+
+    e->drop_hdfsnd = TRUE;
+    e->data = NULL;
+
     e->prev = NULL;
 
     return e;
@@ -115,7 +119,7 @@ void queue_entry_free(struct queue_entry *e) {
     if (e->ename)
         free(e->ename);
     hdf_destroy(&e->hdfrcv);
-    hdf_destroy(&e->hdfsnd);
+    if (e->drop_hdfsnd) hdf_destroy(&e->hdfsnd);
     free(e);
     return;
 }
@@ -166,4 +170,3 @@ int queue_isempty(struct queue *q)
 {
     return (q->size == 0);
 }
-
