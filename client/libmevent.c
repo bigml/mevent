@@ -23,6 +23,12 @@ static bool loaded = false;
 static HDF *g_cfg;
 unsigned int g_reqid = 0;
 
+int update_loaded(int load)
+{
+    loaded = load;
+    return 1;
+}
+
 static int load_config(char *fname)
 {
     NEOERR *err;
