@@ -138,7 +138,7 @@ int mevent_trigger(mevent_t *evt, char *key,
 /*
  *为了更新配置文件，需要将loaded值赋为false
  */
-int update_loaded(int load);
+int mevent_update_loaded(int load);
 
 
 #define MEVENT_TRIGGER(evt, key, cmd, flags)                            \
