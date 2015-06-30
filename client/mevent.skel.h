@@ -135,6 +135,11 @@ mevent_t *mevent_init_plugin(char *ename, char *fname);
 int mevent_trigger(mevent_t *evt, char *key,
                    unsigned short cmd, unsigned short flags);
 
+/*
+ *为了更新配置文件，需要将loaded值赋为false
+ */
+int update_loaded(int load);
+
 
 #define MEVENT_TRIGGER(evt, key, cmd, flags)                            \
     do {                                                                \
