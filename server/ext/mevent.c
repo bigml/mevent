@@ -767,6 +767,13 @@ PHP_FUNCTION(mevent_result)
 /* }}} */
 
 /* {{{ proto array mevent_decode(string packet)
+ * decode packet, return an array to caller.
+ * keys of array defined as follow:
+ *
+ * request_command
+ * plugin_name
+ * hdf
+ * code
  */
 PHP_FUNCTION(mevent_decode)
 {
@@ -798,6 +805,7 @@ PHP_FUNCTION(mevent_decode)
     long variable_type = char2int32(packet[pos], packet[pos + 1],
                                     packet[pos + 2], packet[pos + 3]);
     if (variable_type == DATA_TYPE_EOF) {
+        add_assoc_long(return_value, "code", REP_ERR);
         return;
     }
     pos += VARIABLE_TYPE_LEN;
@@ -807,11 +815,17 @@ PHP_FUNCTION(mevent_decode)
     pos += VARIABLE_NAME_LENGTH_LEN;
     RETURN_ILLEGAL(len, pos + variable_name_length);
     switch(variable_type) {
-        case DATA_TYPE_EOF:
+        case DATA_TYPE_EOF: {
+            add_assoc_long(return_value, "code", REP_ERR);
+        }
         break;
-        case DATA_TYPE_U32:
+        case DATA_TYPE_U32: {
+            add_assoc_long(return_value, "code", REP_ERR);
+        }
         break;
-        case DATA_TYPE_ULONG:
+        case DATA_TYPE_ULONG: {
+            add_assoc_long(return_value, "code", REP_ERR);
+        }
         break;
         case DATA_TYPE_STRING: {
             if (mevent_equal(packet + pos, "root", 4) == 1) {
@@ -840,12 +854,18 @@ PHP_FUNCTION(mevent_decode)
                                   plugin_name_length, 1);
                 add_assoc_zval(return_value, "hdf", r);
                 add_assoc_long(return_value, "code", REP_OK);
+            } else {
+                add_assoc_long(return_value, "code", REP_ERR);
             }
         }
         break;
-        case DATA_TYPE_ARRAY:
+        case DATA_TYPE_ARRAY: {
+            add_assoc_long(return_value, "code", REP_ERR);
+        }
         break;
-        default:
+        default: {
+            add_assoc_long(return_value, "code", REP_ERR);
+        }
         break;
     }
 }
