@@ -49,6 +49,9 @@ PHP_FUNCTION(mevent_add_bool);
 PHP_FUNCTION(mevent_add_float);
 PHP_FUNCTION(mevent_trigger);
 PHP_FUNCTION(mevent_result);
+PHP_FUNCTION(mevent_decode);
+PHP_FUNCTION(mevent_reply);
+
 /* 
       Declare any global variables you may need between the BEGIN
     and END macros here:     
