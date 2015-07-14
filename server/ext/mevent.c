@@ -29,6 +29,32 @@
 #include "mevent.h"
 #include "ClearSilver.h"
 
+#define LONG_FIRST_BYTE                0x00000000000000ff
+#define LONG_SECOND_BYTE               0x000000000000ff00
+#define LONG_SECOND_SHORT              0x00000000ffff0000
+#define MASK_REQUEST_ID                0x000000000fffffff
+
+#define VERSION_AND_REQUEST_ID_LEN     4
+#define REQUEST_COMMAND_LEN            2
+#define FLAGS_LEN                      2
+#define PLUGIN_NAME_LENGTH_LEN         4
+#define VARIABLE_TYPE_LEN              4
+#define VARIABLE_NAME_LENGTH_LEN       4
+#define VARIABLE_VALUE_LENGTH_LEN      4
+
+#define RETURN_ILLEGAL(a, b) {                                   \
+    if ((a) < (b)) {                                             \
+        add_assoc_long(return_value, "code", REP_ERR);           \
+        return;                                                  \
+    }                                                            \
+}
+
+#define SAFE_FREE(a) {                                           \
+    if ((a) != NULL) {                                           \
+        free(a);                                                 \
+        (a) = NULL;                                              \
+    }                                                            \
+}
 
 typedef enum {
     CNODE_TYPE_STRING = 100,
@@ -72,6 +98,8 @@ zend_function_entry mevent_functions[] = {
     PHP_FE(mevent_add_float,    NULL)
     PHP_FE(mevent_trigger,    NULL)
     PHP_FE(mevent_result,    NULL)
+    PHP_FE(mevent_decode,    NULL)
+    PHP_FE(mevent_reply,    NULL)
     {NULL, NULL, NULL}    /* Must be the last line in mevent_functions[] */
 };
 /* }}} */
@@ -124,13 +152,122 @@ static char* mutil_obj_attr(HDF *hdf, char*key)
     return NULL;
 }
 
+static long char2int16(char a, char b) {
+    long h = ((long)a) & LONG_FIRST_BYTE;
+    long l = ((long)b) & LONG_FIRST_BYTE;
+    return ((h << 8) & LONG_SECOND_BYTE) | l;
+}
+
+static long char2int32(char a, char b, char c, char d) {
+    long h = char2int16(a, b);
+    long l = char2int16(c, d);
+    return ((h << 16) & LONG_SECOND_SHORT) | l;
+}
+
+static char* int32_tostring(long n) {
+    char *r = (char*)malloc(sizeof(char) * 4);
+    int i = 0;
+    for (; i < 4; i++) {
+        r[3 - i] = (char)(n & LONG_FIRST_BYTE);
+        n >>= 8;
+    }
+    return r;
+}
+
+static int mevent_equal(char *s1, char *s2, int l) {
+    int i = 0;
+    for (; i < l; i++) {
+        if (s1[i] != s2[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static char* mevent_substring(char *s, int a, int b) {
+    if (a > b) {
+        return NULL;
+    }
+    char *r = (char*)malloc(sizeof(char) * (b - a + 1));
+    int i = a;
+    for (; i < b; i++) {
+        r[i - a] = s[i];
+    }
+    r[i - a] = '\0';
+    return r;
+}
+
+static void mevent_set_string(char *d, char *s, int l, int f) {
+    if (d == NULL || s == NULL) {
+        return;
+    }
+    int i = 0;
+    for (; i < l; i++) {
+        d[f + i] = s[i];
+    }
+}
+
+static char* mevent_normal_string(char *s, int l) {
+    char *r = (char*)malloc(sizeof(char) * (l + 1));
+    int i = 0;
+    for (; i < l; i++) {
+        r[i] = s[i];
+    }
+    r[l] = '\0';
+    return r;
+}
+
+static void mevent_zval_string(char *n, char **s, int *l) {
+    SAFE_FREE(*s);
+    *l = strlen(n);
+    *s = (char*)malloc(sizeof(char) * (*l));
+    int i = 0;
+    for (; i < *l; i++) {
+        *((*s) + i) = n[i];
+    }
+}
+
+static void mevent_construct_packet(long request_id, long reply_code,
+                                    char *hdf, int hdf_len, char **packet,
+                                    int *packet_len) {
+    char *request_id_string = int32_tostring(request_id);
+    char *reply_code_string = int32_tostring(reply_code);
+    long variable_type = DATA_TYPE_STRING;
+    char *variable_type_string = int32_tostring(variable_type);
+    long name_len = 4;
+    char *name_len_string = int32_tostring(name_len);
+    char *name = strdup("root");
+    long vsize = hdf_len;
+    char *vsize_string = int32_tostring(vsize);
+    long len = 28 + vsize;
+    char *len_string = int32_tostring(len);
+    SAFE_FREE(*packet);
+    *packet = (char*)malloc(sizeof(char) * len);
+    mevent_set_string(*packet, request_id_string, 4, 0);
+    mevent_set_string(*packet, reply_code_string, 4, 4);
+    mevent_set_string(*packet, len_string, 4, 8);
+    mevent_set_string(*packet, variable_type_string, 4, 12);
+    mevent_set_string(*packet, name_len_string, 4, 16);
+    mevent_set_string(*packet, name, 4, 20);
+    mevent_set_string(*packet, vsize_string, 4, 24);
+    mevent_set_string(*packet, hdf, hdf_len, 28);
+    *packet_len = len;
+    SAFE_FREE(request_id_string);
+    SAFE_FREE(reply_code_string);
+    SAFE_FREE(variable_type_string);
+    SAFE_FREE(name_len_string);
+    SAFE_FREE(name);
+    SAFE_FREE(vsize_string);
+    SAFE_FREE(len_string);
+}
+
 static void mevent_fetch_array(HDF *node, zval **re)
 {
     if (node == NULL) return;
 
     char *key, *name, *type, *val, *n;
     zval *cre;
-    int ctype, namelen;
+    int ctype;
 
     node = hdf_obj_child(node);
 
@@ -184,13 +321,115 @@ static void mevent_fetch_array(HDF *node, zval **re)
                 add_assoc_double(*re, name, strtod(val, &n));
                 break;
             default:
-                namelen = strlen(name);
-                add_assoc_string_ex(*re, name, namelen+1, val, 1);
+                add_assoc_stringl(*re, name, val, strlen(val), 1);
             }
         }
 
         node = hdf_obj_next(node);
     }
+}
+
+static void mevent_fetch_hdf(HashTable *hash, HDF *node, int *type) {
+    if (hash == NULL || node == NULL) {
+        return;
+    }
+    zval **data;
+    HashPosition pointer;
+    int is_array = 0;
+    for (zend_hash_internal_pointer_reset_ex(hash, &pointer);
+         zend_hash_get_current_data_ex(hash, (void**) &data, &pointer) == SUCCESS;
+         zend_hash_move_forward_ex(hash, &pointer)) {
+        char *key = NULL;
+        int key_len = 0;
+        long index = 0;
+        int hash_key_type = zend_hash_get_current_key_ex(hash, &key, &key_len,
+                                                         &index, 0, &pointer);
+        char *normal_key = NULL;
+        if (hash_key_type == HASH_KEY_IS_LONG) {
+            is_array = 1;
+        }
+        switch (Z_TYPE_PP(data)) {
+            case IS_NULL:
+            break;
+            case IS_LONG: {
+                long lval = Z_LVAL_PP(data);
+                if (hash_key_type == HASH_KEY_IS_STRING) {
+                    normal_key = mevent_normal_string(key, key_len);
+                } else if (hash_key_type == HASH_KEY_IS_LONG) {
+                    normal_key = (char*)malloc(sizeof(char) * 64);
+                    snprintf(normal_key, 64, "%d", index);
+                }
+                hdf_set_int_value(node, normal_key, lval);
+                char node_type[64];
+                snprintf(node_type, 64, "%d", CNODE_TYPE_INT);
+                hdf_set_attr(node, normal_key, "type", node_type);
+                SAFE_FREE(normal_key);
+            }
+            break;
+            case IS_DOUBLE: {
+                double dval = Z_DVAL_PP(data);
+                if (hash_key_type == HASH_KEY_IS_STRING) {
+                    normal_key = mevent_normal_string(key, key_len);
+                } else if (hash_key_type == HASH_KEY_IS_LONG) {
+                    normal_key = (char*)malloc(sizeof(char) * 64);
+                    snprintf(normal_key, 64, "%d", index);
+                }
+                char str_dval[512];
+                snprintf(str_dval, 512, "%f", dval);
+                hdf_set_value(node, normal_key, str_dval);
+                char node_type[64];
+                snprintf(node_type, 64, "%d", CNODE_TYPE_FLOAT);
+                hdf_set_attr(node, normal_key, "type", node_type);
+                SAFE_FREE(normal_key);
+            }
+            break;
+            case IS_BOOL:
+            break;
+            case IS_RESOURCE:
+            break;
+            case IS_STRING: {
+                char *value = Z_STRVAL_PP(data);
+                int value_len = Z_STRLEN_PP(data);
+                char *normal_value = mevent_normal_string(value, value_len);
+                if (hash_key_type == HASH_KEY_IS_STRING) {
+                    normal_key = mevent_normal_string(key, key_len);
+                } else if (hash_key_type == HASH_KEY_IS_LONG) {
+                    normal_key = (char*)malloc(sizeof(char) * 64);
+                    snprintf(normal_key, 64, "%d", index);
+                }
+                hdf_set_value(node, normal_key, normal_value);
+                char node_type[64];
+                snprintf(node_type, 64, "%d", CNODE_TYPE_STRING);
+                hdf_set_attr(node, normal_key, "type", node_type);
+                SAFE_FREE(normal_key);
+                SAFE_FREE(normal_value);
+            }
+            break;
+            case IS_ARRAY: {
+                if (hash_key_type == HASH_KEY_IS_STRING) {
+                    normal_key = mevent_normal_string(key, key_len);
+                } else if (hash_key_type == HASH_KEY_IS_LONG) {
+                    normal_key = (char*)malloc(sizeof(char) * 64);
+                    snprintf(normal_key, 64, "%d", index);
+                }
+                HDF *child = NULL;
+                hdf_get_node(node, normal_key, &child);
+                int c_type;
+                mevent_fetch_hdf(Z_ARRVAL_PP(data), child, &c_type);
+                char node_type[64];
+                snprintf(node_type, 64, "%d", c_type);
+                hdf_set_attr(node, normal_key, "type", node_type);
+
+                SAFE_FREE(normal_key);
+            }
+            break;
+            case IS_OBJECT:
+            break;
+            default:
+            break;
+        }
+    }
+    *type = (is_array == 1) ? CNODE_TYPE_ARRAY : CNODE_TYPE_OBJECT;
 }
 
 /* {{{ PHP_INI
@@ -524,6 +763,156 @@ PHP_FUNCTION(mevent_result)
             }
         }
     }
+}
+/* }}} */
+
+/* {{{ proto array mevent_decode(string packet)
+ */
+PHP_FUNCTION(mevent_decode)
+{
+    char *packet; int len;
+    int pos = 0;
+    array_init(return_value);
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s",
+        &packet, &len) == FAILURE) {
+        return;
+    }
+    RETURN_ILLEGAL(len, VERSION_AND_REQUEST_ID_LEN
+                   + REQUEST_COMMAND_LEN
+                   + FLAGS_LEN
+                   + PLUGIN_NAME_LENGTH_LEN);
+    long version_and_request_id = char2int32(packet[pos], packet[pos + 1],
+                                             packet[pos + 2], packet[pos + 3]);
+    long request_id = version_and_request_id & MASK_REQUEST_ID;
+    add_assoc_long(return_value, "request_id", request_id);
+    pos += VERSION_AND_REQUEST_ID_LEN;
+    long request_command = char2int16(packet[pos], packet[pos + 1]);
+    pos += (REQUEST_COMMAND_LEN + FLAGS_LEN);
+    long plugin_name_length = char2int32(packet[pos], packet[pos + 1],
+                                         packet[pos + 2], packet[pos + 3]);
+    pos += PLUGIN_NAME_LENGTH_LEN;
+    RETURN_ILLEGAL(len, pos + plugin_name_length);
+    long plugin_name_pos = pos;
+    pos += plugin_name_length;
+    RETURN_ILLEGAL(len, pos + VARIABLE_TYPE_LEN);
+    long variable_type = char2int32(packet[pos], packet[pos + 1],
+                                    packet[pos + 2], packet[pos + 3]);
+    if (variable_type == DATA_TYPE_EOF) {
+        return;
+    }
+    pos += VARIABLE_TYPE_LEN;
+    RETURN_ILLEGAL(len, pos + VARIABLE_NAME_LENGTH_LEN);
+    long variable_name_length = char2int32(packet[pos], packet[pos + 1],
+                                           packet[pos + 2], packet[pos + 3]);
+    pos += VARIABLE_NAME_LENGTH_LEN;
+    RETURN_ILLEGAL(len, pos + variable_name_length);
+    switch(variable_type) {
+        case DATA_TYPE_EOF:
+        break;
+        case DATA_TYPE_U32:
+        break;
+        case DATA_TYPE_ULONG:
+        break;
+        case DATA_TYPE_STRING: {
+            if (mevent_equal(packet + pos, "root", 4) == 1) {
+                pos += variable_name_length;
+                RETURN_ILLEGAL(len, pos + VARIABLE_VALUE_LENGTH_LEN);
+                long variable_value_length = char2int32(packet[pos],
+                                                        packet[pos + 1],
+                                                        packet[pos + 2],
+                                                        packet[pos + 3]);
+                pos += VARIABLE_VALUE_LENGTH_LEN;
+                RETURN_ILLEGAL(len, pos + variable_value_length);
+                char *variable_value = mevent_substring(packet + pos, 0,
+                                                        variable_value_length);
+                HDF *hdf = NULL;
+                hdf_init(&hdf);
+                hdf_read_string(hdf, variable_value);
+                SAFE_FREE(variable_value);
+                zval *r;
+                ALLOC_INIT_ZVAL(r);
+                array_init(r);
+                mevent_fetch_array(hdf, &r);
+                hdf_destroy(&hdf);
+                add_assoc_long(return_value, "request_command", request_command);
+                add_assoc_stringl(return_value, "plugin_name",
+                                  packet + plugin_name_pos,
+                                  plugin_name_length, 1);
+                add_assoc_zval(return_value, "hdf", r);
+                add_assoc_long(return_value, "code", REP_OK);
+            }
+        }
+        break;
+        case DATA_TYPE_ARRAY:
+        break;
+        default:
+        break;
+    }
+}
+/* }}} */
+
+/* {{{ proto string mevent_reply(array arr1)
+ */
+PHP_FUNCTION(mevent_reply)
+{
+    zval *arr, **data;
+    HashTable *arr_hash;
+    HashPosition pointer;
+    int arr_count;
+    int has_request_id = 0;
+    long request_id = 0;
+    long reply_code = REP_ERR;
+    char *packet = NULL;
+    int packet_len = 0;
+    char *hdf = NULL;
+    int hdf_len = 0;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &arr) == FAILURE
+        || arr == NULL) {
+        RETURN_STRINGL(NULL, 0, 0);
+    }
+    arr_hash = Z_ARRVAL_P(arr);
+    arr_count = zend_hash_num_elements(arr_hash);
+    if (arr_count == 0) {
+        RETURN_STRINGL(NULL, 0, 0);
+    }
+    for (zend_hash_internal_pointer_reset_ex(arr_hash, &pointer);
+         zend_hash_get_current_data_ex(arr_hash, (void**) &data,
+         &pointer) == SUCCESS;
+         zend_hash_move_forward_ex(arr_hash, &pointer)) {
+        zval temp;
+        char *key;
+        int key_len;
+        long index;
+        if (zend_hash_get_current_key_ex(arr_hash, &key, &key_len, &index, 0,
+            &pointer) == HASH_KEY_IS_STRING) {
+            if (mevent_equal(key, "request_id", key_len)) {
+                has_request_id = 1;
+                request_id = Z_LVAL_PP(data);
+            } else if (mevent_equal(key, "hdf", key_len)) {
+                char *normal_hdf = NULL;
+                HDF *node = NULL;
+                hdf_init(&node);
+                HashTable *hash = Z_ARRVAL_PP(data);
+                int type;
+                mevent_fetch_hdf(hash, node, &type);
+                hdf_write_string(node, &normal_hdf);
+                hdf_destroy(&node);
+                mevent_zval_string(normal_hdf, &hdf, &hdf_len);
+                SAFE_FREE(normal_hdf);
+            } else if (mevent_equal(key, "code", key_len)) {
+                reply_code = Z_LVAL_PP(data);
+            }
+        }
+    }
+    if (has_request_id == 0) {
+        RETURN_STRINGL(NULL, 0, 0);
+    }
+    mevent_construct_packet(request_id, reply_code, hdf, hdf_len, &packet,
+                            &packet_len);
+    SAFE_FREE(hdf);
+    RETVAL_STRINGL(packet, packet_len, 1);
+    SAFE_FREE(packet);
+    return;
 }
 /* }}} */
 
