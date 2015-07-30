@@ -2,7 +2,7 @@ LOCALBASE = ../
 include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
-SUBDIR = daemon plugin oiad conf test oiad
+SUBDIR = daemon plugin oiad conf test
 
 all: $(SUBDIR)
 	@$(MULTIMAKE) $(SUBDIR)

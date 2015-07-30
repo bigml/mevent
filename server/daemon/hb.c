@@ -44,6 +44,8 @@ void set_param(HDF *node)
     hdf_set_value(node, "v.type", "喜剧，犯罪");
     hdf_set_value(node, "v.year", "2010");
     hdf_set_value(node, "v.pianyuan", "1");
+
+    hdf_set_value(node, "m.xx", "yy");
 }
 
 int main(int argc, char *argv[])

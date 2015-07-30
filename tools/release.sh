@@ -63,6 +63,7 @@ sudo tar zcvf ${PACKAGE_NAME}.${VERSION}.tar.gz \
     /usr/local/lib/libmevent.so \
     /usr/local/lib/libmongo-client.* \
     /usr/local/lib/mevent_*.so;
+sudo cp ${PACKAGE_NAME}.${VERSION}.tar.gz /opt/mevent;
 
 cd -;
 
