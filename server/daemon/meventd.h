@@ -41,7 +41,7 @@ struct event_entry {
     int cur_thread;
     struct queue *op_queue[MAX_THREAD_NUM];
     pthread_t *op_thread[MAX_THREAD_NUM];
-    pthread_t *mt_thread[MAX_THREAD_NUM]; /* mate threads, have no queue */
+    pthread_t *mt_thread[MAX_THREAD_NUM]; /* op's mate threads, don't have queue */
     int loop_should_stop;
     struct event_entry *prev;
     struct event_entry *next;
