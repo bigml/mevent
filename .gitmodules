@@ -1,3 +1,6 @@
 [submodule "mbase"]
 	path = mbase
 	url = git@git.hunantv.com:subplat/mbase.git
+[submodule "server/oiad"]
+	path = server/oiad
+	url = git@git.hunantv.com:subplat/oiad.git

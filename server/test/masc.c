@@ -9,7 +9,8 @@ static void _set_params(HDF *node)
 {
     if (!node) return;
 
-    hdf_set_value(node, "boardid", "4820");
+    hdf_set_value(node, "boardid", "4580");
+    hdf_set_value(node, "player_id", "4580");
     hdf_set_value(node, "ptype", "100");
     hdf_set_value(node, "videoid", "1116403");
     hdf_set_value(node, "vtt", "1200");
@@ -52,13 +53,13 @@ int main(int argc, char *argv[])
     count_ok = count_fai = count_total = 0;
 
     mtimer_start();
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 1; i++) {
         _set_params(evt->hdfsnd);
 
         ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
         if (PROCESS_OK(ret)) {
-            //printf("process success %d\n", ret);
-            //hdf_dump(evt->hdfrcv, NULL);
+            printf("process success %d\n", ret);
+            hdf_dump(evt->hdfrcv, NULL);
             count_ok++;
         } else {
             //printf("process failure %d!\n", ret);

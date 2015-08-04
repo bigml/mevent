@@ -25,7 +25,7 @@ RESTART=0
 
 DIR_BIN=${SITE_PATH}/mevent/server/daemon/
 DIR_SHELL=${SITE_PATH}/mevent/tools
-DIR_CFG=${SITE_PATH}/xport/
+DIR_CFG=${SITE_PATH}/mevent/server/oiad/
 
 BACK_DIR=$(date +%Y%m%d%H%m%S)
 

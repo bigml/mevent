@@ -2,7 +2,7 @@ LOCALBASE = ./
 include $(LOCALBASE)Make.env
 include $(BASEDIR)Make.env
 
-SUBDIR = mbase client server ../xport
+SUBDIR = mbase client server
 
 all: $(SUBDIR)
 	@$(MULTIMAKE) $(SUBDIR)

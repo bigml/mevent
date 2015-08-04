@@ -11,6 +11,7 @@
 
 #include "net-const.h"
 #include "common.h"
+#include "mevent.h"
 #include "mheads.h"
 
 /*
@@ -41,6 +42,29 @@ static uint32_t hash(const unsigned char *key, const size_t ksize)
     return h;
 }
 
+
+static pthread_key_t m_pos_key;
+static pthread_once_t m_once = PTHREAD_ONCE_INIT;
+
+static void _tls_make_myposkey()
+{
+    pthread_key_create(&m_pos_key, free);
+}
+
+static int* _tls_get_mypos()
+{
+    void *ptr;
+
+    pthread_once(&m_once, _tls_make_myposkey);
+
+    if ((ptr = pthread_getspecific(m_pos_key)) == NULL) {
+        ptr = malloc(sizeof(int));
+        pthread_setspecific(m_pos_key, ptr);
+    }
+
+    return (int*) ptr;
+}
+
 static void* mevent_start_base_entry(void *arg)
 {
     int rv;
@@ -48,6 +72,10 @@ static void* mevent_start_base_entry(void *arg)
     struct queue_entry *q;
 
     struct event_entry *e = (struct event_entry*)arg;
+    int *mypos = _tls_get_mypos();
+    *mypos = e->cur_thread;
+
+    mtc_dbg("I'm %s %dnd thread", e->name, *mypos);
 
     for (;;) {
         /* Condition waits are specified with absolute timeouts, see
@@ -60,21 +88,21 @@ static void* mevent_start_base_entry(void *arg)
         ts.tv_sec += 1;
 
         rv = 0;
-        queue_lock(e->op_queue);
-        while (queue_isempty(e->op_queue) && rv == 0) {
-            rv = queue_timedwait(e->op_queue, &ts);
+        queue_lock(e->op_queue[*mypos]);
+        while (queue_isempty(e->op_queue[*mypos]) && rv == 0) {
+            rv = queue_timedwait(e->op_queue[*mypos], &ts);
         }
 
         if (rv != 0 && rv != ETIMEDOUT) {
             errlog("Error in queue_timedwait()");
             /* When the timedwait fails the lock is released, so
              * we need to properly annotate this case. */
-            __release(e->op_queue->lock);
+            __release(e->op_queue[*mypos]->lock);
             continue;
         }
 
-        q = queue_get(e->op_queue);
-        queue_unlock(e->op_queue);
+        q = queue_get(e->op_queue[*mypos]);
+        queue_unlock(e->op_queue[*mypos]);
 
         if (q == NULL) {
             if (e->loop_should_stop) {
@@ -83,6 +111,8 @@ static void* mevent_start_base_entry(void *arg)
                 continue;
             }
         }
+
+        mtc_dbg("%s %d process", e->name, *mypos);
 
         e->process_driver(e, q);
 
@@ -101,24 +131,70 @@ static void mevent_stop_driver(struct event_entry *e)
     //dlclose(e->lib);
     e->loop_should_stop = 1;
     e->stop_driver(e);
-    pthread_join(*(e->op_thread), NULL);
-    free(e->op_thread);
-    queue_free(e->op_queue);
+
+    for (int i = 0; i < e->num_thread; i++) {
+        pthread_join(*(e->op_thread[i]), NULL);
+        free(e->op_thread[i]);
+        e->op_thread[i] = NULL;
+        queue_free(e->op_queue[i]);
+    }
+
+    for (int i = 0; i < MAX_THREAD_NUM && e->mt_thread[i] != NULL; i++) {
+        pthread_join(*(e->mt_thread[i]), NULL);
+        free(e->mt_thread[i]);
+        e->mt_thread[i] = NULL;
+    }
+
     if (e->name != NULL) free(e->name);
     free(e);
 }
 
-static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void *lib)
+static int mevent_start_driver(struct mevent *evt, struct event_driver *d,
+                               void *lib, int num_thread, HDF *matenode)
 {
     if (evt == NULL || evt->table == NULL || d == NULL) return 0;
 
     struct event_entry *e = d->init_driver();
     if (e == NULL) return 0;
 
-    //e->lib = lib;
-    e->op_queue = queue_create();
-    e->op_thread = malloc(sizeof(pthread_t));
-    pthread_create(e->op_thread, NULL, mevent_start_base_entry, (void*)e);
+    num_thread = num_thread < 0 ? 1 : num_thread;
+    if (num_thread > MAX_THREAD_NUM) {
+        wlog("plugin %s thread number %d too large, set to default max number %d",
+             e->name, num_thread, MAX_THREAD_NUM);
+        mtc_warn("plugin %s thread number %d too large, set to default max number %d",
+                 e->name, num_thread, MAX_THREAD_NUM);
+        num_thread = MAX_THREAD_NUM;
+    }
+
+    e->num_thread = num_thread;
+    e->cur_thread = 0;
+
+    for (int i = 0; i < num_thread; i++) {
+        e->op_queue[i] = queue_create();
+        e->op_thread[i] = malloc(sizeof(pthread_t));
+        pthread_create(e->op_thread[i], NULL, mevent_start_base_entry, (void*)e);
+        sleep(1);
+        e->cur_thread++;
+    }
+
+    e->cur_thread = 0;
+
+    HDF *cnode = hdf_obj_child(matenode);
+    char *dle;
+    for (int i = 0; cnode && i < MAX_THREAD_NUM; cnode = hdf_obj_next(cnode)) {
+        void* (*mate_func)(void *arg);
+
+        mate_func = dlsym(lib, hdf_obj_value(cnode));
+        if ((dle = dlerror()) != NULL) {
+            wlog("unable to find %s %s", hdf_obj_value(cnode), dle);
+            mtc_err("unable to find %s %s", hdf_obj_value(cnode), dle);
+            continue;
+        }
+
+        e->mt_thread[i] = malloc(sizeof(pthread_t));
+        pthread_create(e->mt_thread[i], NULL, mate_func, (void*)e);
+        i++;
+    }
 
     uint32_t h;
     struct event_chain *c;
@@ -135,7 +211,11 @@ static int mevent_start_driver(struct mevent *evt, struct event_driver *d, void 
         c->first = e;
         c->len += 1;
     } else {
-        /* chain is full, we need to evict the last one */
+        wlog("unbelieveable, you have more than %d plugins, stop it %s",
+             evt->chainlen, e->name);
+        mtc_warn("unbelieveable, you have more than %ld plugins, stop it %s",
+                 evt->chainlen, e->name);
+
         mevent_stop_driver(e);
         return 0;
     }
@@ -180,13 +260,18 @@ struct mevent* mevent_start(void)
 
     void *lib;
     char tbuf[1024], *tp;
+    char *name;
+    int num_thread;
     struct event_driver *driver;
-    HDF *res = hdf_get_obj(g_cfg, PRE_SERVER".plugins.0");
+    HDF *res = hdf_get_child(g_cfg, PRE_SERVER".plugins");
     char *plugin_path = settings.plugin_path ? settings.plugin_path : PLUGIN_PATH;
     while (res != NULL) {
         lib = NULL; driver = NULL; memset(tbuf, 0x0, sizeof(tbuf));
+        name = hdf_get_value(res, "name", "_unexist");
+        num_thread = hdf_get_int_value(res, "numberofthreads", 1);
+        HDF *mates = hdf_get_obj(res, "mates");
 
-        snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, hdf_obj_value(res));
+        snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, name);
         //lib = dlopen(tbuf, RTLD_NOW|RTLD_GLOBAL);
         lib = dlopen(tbuf, RTLD_LAZY|RTLD_GLOBAL);
         if (lib == NULL) {
@@ -195,7 +280,7 @@ struct mevent* mevent_start(void)
             continue;
         }
 
-        snprintf(tbuf, sizeof(tbuf), "%s_driver", hdf_obj_value(res));
+        snprintf(tbuf, sizeof(tbuf), "%s_driver", name);
         driver = (struct event_driver*)dlsym(lib, tbuf);
         if ((tp = dlerror()) != NULL) {
             wlog("find symbol %s failure %s\n", tbuf, tp);
@@ -203,8 +288,8 @@ struct mevent* mevent_start(void)
             continue;
         }
 
-        ret = mevent_start_driver(evt, driver, lib);
-        if (ret != 1) wlog("init driver %s failure\n", hdf_obj_value(res));
+        ret = mevent_start_driver(evt, driver, lib, num_thread, mates);
+        if (ret != 1) wlog("init driver %s failure\n", name);
         else evt->numevts++;
 
         res = hdf_obj_next(res);

@@ -11,7 +11,10 @@
 #include <string.h>        /* for memcpy()/memcmp() */
 #include <stdio.h>        /* snprintf() */
 #include <stdarg.h>        /* va_end() */
+#include <pthread.h>
 #include "cache.h"
+
+static pthread_mutex_t m_lock = PTHREAD_MUTEX_INITIALIZER;
 
 volatile time_t g_ctime = 0;
 volatile double g_ctimef = 0.0;
@@ -149,7 +152,7 @@ static struct cache_entry *find_in_cache(struct cache *cd,
 /* Gets the matching value for the given key.  Returns 0 if no match was
  * found, or 1 otherwise. */
 int cache_get(struct cache *cd, const unsigned char *key, size_t ksize,
-        unsigned char **val, size_t *vsize)
+              unsigned char **val, size_t *vsize)
 {
     struct cache_entry *e;
 
@@ -174,9 +177,55 @@ int cache_get(struct cache *cd, const unsigned char *key, size_t ksize,
     return 1;
 }
 
+int cache_get_copyr(struct cache *cd, const unsigned char *key, size_t ksize,
+                    unsigned char **val, size_t *vsize)
+{
+    struct cache_entry *e;
+    int ret = 0;
+
+    pthread_mutex_lock(&m_lock);
+
+    e = find_in_cache(cd, key, ksize);
+
+    if (e == NULL) {
+        *val = NULL;
+        *vsize = 0;
+        ret = 0;
+        goto exit;
+    }
+
+    if (e->expire > 0 && e->expire < g_ctime) {
+        pthread_mutex_unlock(&m_lock);
+
+        cache_del(cd, (unsigned char*)key, (size_t)ksize);
+
+        pthread_mutex_lock(&m_lock);
+
+        *val = NULL;
+        *vsize = 0;
+        ret = 0;
+        goto exit;
+    }
+
+    *vsize = e->vsize;
+    *val = malloc(*vsize);
+    if (*val == NULL) {
+        *vsize = 0;
+        ret = 0;
+        goto exit;
+    }
+    memcpy(*val, e->val, *vsize);
+
+    ret = 1;
+
+exit:
+    pthread_mutex_unlock(&m_lock);
+    return ret;
+}
+
 
 int cache_set(struct cache *cd, const unsigned char *key, size_t ksize,
-        const unsigned char *val, size_t vsize, int timeout)
+              const unsigned char *val, size_t vsize, int timeout)
 {
     int rv = 1;
     uint32_t h = 0;
@@ -186,6 +235,8 @@ int cache_set(struct cache *cd, const unsigned char *key, size_t ksize,
 
     h = hash(key, ksize) % cd->hashlen;
     c = cd->table + h;
+
+    pthread_mutex_lock(&m_lock);
 
     e = find_in_chain(c, key, ksize);
 
@@ -277,6 +328,7 @@ int cache_set(struct cache *cd, const unsigned char *key, size_t ksize,
     }
 
 exit:
+    pthread_mutex_unlock(&m_lock);
     return rv;
 }
 
@@ -291,6 +343,8 @@ int cache_del(struct cache *cd, const unsigned char *key, size_t ksize)
 
     h = hash(key, ksize) % cd->hashlen;
     c = cd->table + h;
+
+    pthread_mutex_lock(&m_lock);
 
     e = find_in_chain(c, key, ksize);
 
@@ -320,6 +374,7 @@ int cache_del(struct cache *cd, const unsigned char *key, size_t ksize)
     c->len -= 1;
 
 exit:
+    pthread_mutex_unlock(&m_lock);
     return rv;
 }
 
@@ -334,6 +389,8 @@ int cache_cas(struct cache *cd, const unsigned char *key, size_t ksize,
     int rv = 1;
     struct cache_entry *e;
     unsigned char *buf;
+
+    pthread_mutex_lock(&m_lock);
 
     e = find_in_cache(cd, key, ksize);
 
@@ -364,6 +421,7 @@ int cache_cas(struct cache *cd, const unsigned char *key, size_t ksize,
     e->vsize = nvsize;
 
 exit:
+    pthread_mutex_unlock(&m_lock);
     return rv;
 }
 
@@ -386,20 +444,27 @@ int cache_incr(struct cache *cd, const unsigned char *key, size_t ksize,
     unsigned char *val;
     int64_t intval;
     size_t vsize;
+    int ret;
     struct cache_entry *e;
+
+    pthread_mutex_lock(&m_lock);
 
     e = find_in_cache(cd, key, ksize);
 
-    if (e == NULL)
-        return -1;
+    if (e == NULL) {
+        ret = -1;
+        goto exit;
+    }
 
     val = e->val;
     vsize = e->vsize;
 
     /* the value must be a NULL terminated string, otherwise strtoll might
      * cause a segmentation fault */
-    if (val && val[vsize - 1] != '\0')
-        return -2;
+    if (val && val[vsize - 1] != '\0') {
+        ret = -2;
+        goto exit;
+    }
 
     intval = strtoll((char *) val, NULL, 10);
     intval = intval + increment;
@@ -409,8 +474,10 @@ int cache_incr(struct cache *cd, const unsigned char *key, size_t ksize,
      * than 24 (just in case) we create a new buffer. */
     if (vsize < 24) {
         unsigned char *nv = malloc(24);
-        if (nv == NULL)
-            return -3;
+        if (nv == NULL) {
+            ret = -3;
+            goto exit;
+        }
         free(val);
         e->val = val = nv;
         e->vsize = vsize = 24;
@@ -419,7 +486,11 @@ int cache_incr(struct cache *cd, const unsigned char *key, size_t ksize,
     snprintf((char *) val, vsize, "%23lld", (long long int) intval);
     *newval = intval;
 
-    return 1;
+    ret = 1;
+
+exit:
+    pthread_mutex_unlock(&m_lock);
+    return ret;
 }
 
 int cache_getf(struct cache *cd, unsigned char **val, size_t *vsize,
@@ -434,6 +505,20 @@ int cache_getf(struct cache *cd, unsigned char **val, size_t *vsize,
     va_end(ap);
 
     return cache_get(cd, (unsigned char*)key, (size_t)r, val, vsize);
+}
+
+int cache_get_copyrf(struct cache *cd, unsigned char **val, size_t *vsize,
+                     const char *keyfmt, ...)
+{
+    char key[MAX_CACHEKEY_LEN];
+    va_list ap;
+    int r;
+
+    va_start(ap, keyfmt);
+    r = vsnprintf(key, MAX_CACHEKEY_LEN, keyfmt, ap);
+    va_end(ap);
+
+    return cache_get_copyr(cd, (unsigned char*)key, (size_t)r, val, vsize);
 }
 
 int cache_setf(struct cache *cd, const unsigned char *v, size_t vsize,

@@ -30,6 +30,13 @@ struct queue_entry {
     HDF *hdfrcv;
     HDF *hdfsnd;
 
+    /*
+     * someone droped hdfsnd handly, before queue_entry_free()
+     * or, someone need use hdfsnd, after queue_entry_free()
+     */
+    BOOL drop_hdfsnd;
+    void *data;
+
     struct queue_entry *prev;
     /* A pointer to the next element on the list is actually not
      * necessary, because it's not needed for put and get.
