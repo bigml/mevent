@@ -52,7 +52,7 @@ struct event_entry {
      */
     unsigned char *name;
     size_t ksize;
-    void (*process_driver)(struct event_entry *e, struct queue_entry *q);
+    void (*process_driver)(struct event_entry *e, struct queue_entry *q, int curthread);
     void (*stop_driver)(struct event_entry *e);
 
     /*

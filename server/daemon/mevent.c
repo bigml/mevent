@@ -114,7 +114,7 @@ static void* mevent_start_base_entry(void *arg)
 
         mtc_dbg("%s %d process", e->name, *mypos);
 
-        e->process_driver(e, q);
+        e->process_driver(e, q, *mypos);
 
         /* Free the entry that was allocated when tipc queued the
          * operation. This also frees it's components. */
