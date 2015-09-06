@@ -37,3 +37,19 @@ void config_cleanup(HDF **config)
     if (*config == NULL) return;
     hdf_destroy(config);
 }
+
+void config_reload_trace_level(int fd, short event, void *arg)
+{
+    HDF *node;
+
+    hdf_init(&node);
+    hdf_read_file(node, settings.conffname);
+
+    int level = hdf_get_int_value(node, PRE_CONFIG".trace_level", TC_DEFAULT_LEVEL);
+
+    mtc_foo("set trace level to %d", level);
+
+    mtc_set_level(level);
+
+    hdf_destroy(&node);
+}
