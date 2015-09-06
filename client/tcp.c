@@ -40,7 +40,7 @@ static int add_tcp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port,
             setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char*)tv, sizeof(*tv));
         }
     }
-    
+
     newarray = realloc(evt->servers,
                sizeof(struct mevent_srv) * (evt->nservers + 1));
     if (newarray == NULL) {
@@ -50,6 +50,7 @@ static int add_tcp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port,
 
     evt->servers = newarray;
     evt->nservers++;
+    evt->nservers_ok++;
 
     if (port < 0)
         port = TCP_SERVER_PORT;
@@ -76,6 +77,9 @@ static int add_tcp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port,
         goto error_exit;
 
     newsrv->type = TCP_CONN;
+    newsrv->stat = SRV_STAT_OK;
+    newsrv->dietime = 0;
+    newsrv->errcount = 0;
 
     /* keep the list sorted by port, so we can do a reliable selection */
     qsort(evt->servers, evt->nservers, sizeof(struct mevent_srv),
@@ -95,6 +99,7 @@ static int add_tcp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port,
 
     evt->servers = newarray;
     evt->nservers -= 1;
+    evt->nservers_ok -= 1;
 
     return 0;
 }
@@ -115,7 +120,7 @@ static int tcp_server_reconnect(struct mevent_srv *srv)
             setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char*)&(srv->tv), sizeof(srv->tv));
         }
     }
-    
+
     rv = connect(fd, (struct sockaddr *) &(srv->info.in.srvsa),
                  sizeof(srv->info.in.srvsa));
     if (rv < 0) goto error_exit;
@@ -241,7 +246,7 @@ rerecv:
             close(srv->fd);
             srv->fd = -1;
         }
-        
+
         return -1;
     }
 
@@ -284,4 +289,3 @@ uint32_t tcp_get_rep(struct mevent_srv *srv,
 }
 
 #endif /* ENABLE_TCP */
-

@@ -237,6 +237,7 @@ mevent_t* mevent_init(char *ename)
 
     evt->servers = NULL;
     evt->nservers = 0;
+    evt->nservers_ok = 0;
     err = hdf_init(&evt->hdfsnd);
     if (err != STATUS_OK) {
         free(evt);
@@ -430,16 +431,33 @@ static uint32_t checksum(const unsigned char *buf, size_t bsize)
 struct mevent_srv *select_srv(mevent_t *evt,
                               const char *key, size_t ksize)
 {
+    struct mevent_srv *srv;
     uint32_t n;
 
-    if (evt->nservers <= 0)
-        return NULL;
+    if (evt->nservers <= 0 || evt->nservers_ok <= 0) return NULL;
 
     /* neo_rand(max) return rand integer between [0, max) */
-    if (!key || ksize <= 0) return &(evt->servers[neo_rand(evt->nservers)]);
+    if (!key || ksize <= 0) n = neo_rand(evt->nservers);
+    else n = checksum((const unsigned char*)key, ksize) % evt->nservers;
 
-    n = checksum((const unsigned char*)key, ksize) % evt->nservers;
-    return &(evt->servers[n]);
+    srv = &(evt->servers[n]);
+
+    /* srv died in 1 minute */
+    if (srv->stat != SRV_STAT_OK && srv->dietime > (time(NULL) - 60)) {
+        /* select the n'th OK srv */
+        n = neo_rand(evt->nservers_ok);
+
+        int count = 0;
+        for (int i = 0; i < evt->nservers; i++) {
+            srv = &(evt->servers[i]);
+            if (srv->stat == SRV_STAT_OK) {
+                if (count == n) break;
+                count++;
+            }
+        }
+    }
+
+    return srv;
 }
 
 
@@ -462,6 +480,14 @@ int mevent_trigger(mevent_t *evt, char *key,
     if (!srv) {
         evt->errcode = REP_ERR;
         return REP_ERR;
+    }
+
+    if (srv->stat != SRV_STAT_OK) {
+        if (srv->dietime > time(NULL) - 60) {
+            /* 服务器故障还没超过1分钟，不应该使用该服务器 */
+            evt->errcode = REP_ERR;
+            return REP_ERR;
+        }
     }
 
     if (g_reqid++ > 0x0FFFFFFC) {
@@ -513,6 +539,32 @@ int mevent_trigger(mevent_t *evt, char *key,
         if (vsize > 8) {
             /* reply_long add a vsize parameter */
             unpack_hdf(p+4, vsize-4, &evt->hdfrcv);
+        }
+
+        switch (srv->stat) {
+        case SRV_STAT_OK:
+            if (rv != REP_ERR) {
+                srv->errcount = 0;
+            } else {
+                if (srv->errcount == 0) srv->dietime = time(NULL);
+
+                srv->errcount++;
+                if (srv->errcount > 10) {
+                    srv->stat = SRV_STAT_DIED;
+                    evt->nservers_ok--;
+                }
+            }
+            break;
+        case SRV_STAT_DIED:
+            if (rv != REP_ERR) {
+                srv->dietime = 0;
+                srv->errcount = 0;
+                srv->stat = SRV_STAT_OK;
+                evt->nservers_ok++;
+            } else {
+                ;
+            }
+            break;
         }
     }
 

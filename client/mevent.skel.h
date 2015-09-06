@@ -37,11 +37,19 @@
 #include <netinet/in.h>        /* struct sockaddr_in */
 #endif
 
+typedef enum {
+    SRV_STAT_OK = 0,
+    SRV_STAT_DIED
+} srv_stat;
+
 struct mevent_srv {
     int fd;
     int type;
     char *nblock;
     struct timeval tv;
+    srv_stat stat;                   /* 服务状态 */
+    int dietime;                     /* 服务故障时间点 */
+    int errcount;                    /* 上次检查连续失败的个数 */
     union {
 
 #if _ENABLE_TIPC
@@ -64,6 +72,7 @@ struct mevent_srv {
 
 typedef struct mevent_t {
     unsigned int nservers;
+    unsigned int nservers_ok;
     struct mevent_srv *servers;
     int cmd;
     int flags;

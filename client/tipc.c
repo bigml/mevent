@@ -37,6 +37,7 @@ int mevent_add_tipc_server(mevent_t *evt, int port)
 
     evt->servers = newarray;
     evt->nservers++;
+    evt->nservers_ok++;
 
     if (port < 0)
         port = TIPC_SERVER_INST;
@@ -54,6 +55,9 @@ int mevent_add_tipc_server(mevent_t *evt, int port)
     newsrv->info.tipc.srvlen = (socklen_t) sizeof(newsrv->info.tipc.srvsa);
 
     newsrv->type = TIPC_CONN;
+    newsrv->stat = SRV_STAT_OK;
+    newsrv->dietime = 0;
+    newsrv->errcount = 0;
 
     /* keep the list sorted by port, so we can do a reliable selection */
     qsort(evt->servers, evt->nservers, sizeof(struct mevent_srv),
@@ -94,7 +98,7 @@ rerecv:
     reply = ntohl(reply);
 
     if (id < g_reqid) goto rerecv;
-    
+
     if (payload != NULL) {
         *payload = buf + 4 + 4;
         *psize = rv - 4 - 4;
@@ -128,4 +132,3 @@ uint32_t tipc_get_rep(struct mevent_srv *srv,
 }
 
 #endif /* ENABLE_TIPC */
-
