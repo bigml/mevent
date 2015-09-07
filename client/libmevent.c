@@ -549,7 +549,7 @@ int mevent_trigger(mevent_t *evt, char *key,
                 if (srv->errcount == 0) srv->dietime = time(NULL);
 
                 srv->errcount++;
-                if (srv->errcount > 10) {
+                if (srv->errcount > 100) {
                     srv->stat = SRV_STAT_DIED;
                     evt->nservers_ok--;
                 }
@@ -562,7 +562,7 @@ int mevent_trigger(mevent_t *evt, char *key,
                 srv->stat = SRV_STAT_OK;
                 evt->nservers_ok++;
             } else {
-                ;
+                srv->dietime = time(NULL);
             }
             break;
         }
