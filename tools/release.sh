@@ -52,6 +52,7 @@ done
 VERSION=${V_MAJOR}.${V_MINOR}.${V_REV}
 
 echo "prepare "$VERSION
+echo $VERSION > /usr/local/miad/version
 
 cd /;
 sudo mkdir -p /usr/local/release/
