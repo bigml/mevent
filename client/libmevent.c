@@ -434,7 +434,7 @@ struct mevent_srv *select_srv(mevent_t *evt,
     struct mevent_srv *srv;
     uint32_t n;
 
-    if (evt->nservers <= 0 || evt->nservers_ok <= 0) return NULL;
+    if (evt->nservers <= 0) return NULL;
 
     /* neo_rand(max) return rand integer between [0, max) */
     if (!key || ksize <= 0) n = neo_rand(evt->nservers);
@@ -444,6 +444,9 @@ struct mevent_srv *select_srv(mevent_t *evt,
 
     /* srv died in 1 minute */
     if (srv->stat != SRV_STAT_OK && srv->dietime > (time(NULL) - 60)) {
+        /* no other srv ok, return NULL */
+        if (evt->nservers_ok <= 0) return NULL;
+
         /* select the n'th OK srv */
         n = neo_rand(evt->nservers_ok);
 
@@ -483,8 +486,9 @@ int mevent_trigger(mevent_t *evt, char *key,
     }
 
     if (srv->stat != SRV_STAT_OK) {
+        /* try a died server, after died 1 minute */
         if (srv->dietime > time(NULL) - 60) {
-            /* 服务器故障还没超过1分钟，不应该使用该服务器 */
+            /* impossible */
             evt->errcode = REP_ERR;
             return REP_ERR;
         }
