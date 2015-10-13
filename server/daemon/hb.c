@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     int ret;
     char *ename, *conf;
     int cmd;
-    int trynum = 5;
+    int trynum = 6;
 
     if (argc != 4) {
         printf("Usage: %s CLIENT_CONFIG_FILE EVENT_NAME CMD\n", argv[0]);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         set_param(evt->hdfsnd);
 
         string_appendf(&serror, "%d => %d; ", tried, ret);
-        sleep(5);
+        sleep(10);
         ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
         if (PROCESS_NOK(ret) && tried < trynum) {
             tried++;
