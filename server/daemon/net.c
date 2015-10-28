@@ -16,6 +16,7 @@ typedef unsigned char u_char;
 #include "net.h"
 #include "log.h"
 #include "smsalarm.h"
+#include "config.h"
 
 
 static void exit_sighandler(int fd, short event, void *arg)
@@ -31,11 +32,13 @@ static void passive_to_active_sighandler(int fd, short event, void *arg)
     settings.passive = !settings.passive;
 }
 
+#if 0
 static void logfd_reopen_sighandler(int fd, short event, void *arg)
 {
     if (log_reopen())
         wlog("Log reopened\n");
 }
+#endif
 
 void net_loop(void)
 {
@@ -103,8 +106,8 @@ void net_loop(void)
     signal_add(&sigterm_evt, NULL);
     signal_set(&sigint_evt, SIGINT, exit_sighandler, &sigint_evt);
     signal_add(&sigint_evt, NULL);
-    signal_set(&sigusr1_evt, SIGUSR1, logfd_reopen_sighandler,
-            &sigusr1_evt);
+    //signal_set(&sigusr1_evt, SIGUSR1, logfd_reopen_sighandler, &sigusr1_evt);
+    signal_set(&sigusr1_evt, SIGUSR1, config_reload_trace_level, &sigusr1_evt);
     signal_add(&sigusr1_evt, NULL);
     signal_set(&sigusr2_evt, SIGUSR2, passive_to_active_sighandler,
             &sigusr2_evt);

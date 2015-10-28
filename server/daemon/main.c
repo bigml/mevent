@@ -219,6 +219,8 @@ int main(int argc, char **argv)
         setsid();
     }
 
+    g_ctime = (time_t)ne_timef();
+
     wlog("Starting mevent\n");
 
     mevent = mevent_start();

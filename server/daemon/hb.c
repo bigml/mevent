@@ -44,6 +44,8 @@ void set_param(HDF *node)
     hdf_set_value(node, "v.type", "喜剧，犯罪");
     hdf_set_value(node, "v.year", "2010");
     hdf_set_value(node, "v.pianyuan", "1");
+
+    hdf_set_value(node, "m.xx", "yy");
 }
 
 int main(int argc, char *argv[])
@@ -52,7 +54,7 @@ int main(int argc, char *argv[])
     int ret;
     char *ename, *conf;
     int cmd;
-    int trynum = 5;
+    int trynum = 6;
 
     if (argc != 4) {
         printf("Usage: %s CLIENT_CONFIG_FILE EVENT_NAME CMD\n", argv[0]);
@@ -88,7 +90,7 @@ int main(int argc, char *argv[])
         set_param(evt->hdfsnd);
 
         string_appendf(&serror, "%d => %d; ", tried, ret);
-        sleep(5);
+        sleep(10);
         ret = mevent_trigger(evt, NULL, cmd, FLAGS_SYNC);
         if (PROCESS_NOK(ret) && tried < trynum) {
             tried++;

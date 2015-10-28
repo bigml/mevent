@@ -114,7 +114,7 @@ static void* mevent_start_base_entry(void *arg)
 
         mtc_dbg("%s %d process", e->name, *mypos);
 
-        e->process_driver(e, q);
+        e->process_driver(e, q, *mypos);
 
         /* Free the entry that was allocated when tipc queued the
          * operation. This also frees it's components. */
@@ -131,17 +131,26 @@ static void mevent_stop_driver(struct event_entry *e)
     //dlclose(e->lib);
     e->loop_should_stop = 1;
     e->stop_driver(e);
+
     for (int i = 0; i < e->num_thread; i++) {
         pthread_join(*(e->op_thread[i]), NULL);
         free(e->op_thread[i]);
+        e->op_thread[i] = NULL;
         queue_free(e->op_queue[i]);
     }
+
+    for (int i = 0; i < MAX_THREAD_NUM && e->mt_thread[i] != NULL; i++) {
+        pthread_join(*(e->mt_thread[i]), NULL);
+        free(e->mt_thread[i]);
+        e->mt_thread[i] = NULL;
+    }
+
     if (e->name != NULL) free(e->name);
     free(e);
 }
 
 static int mevent_start_driver(struct mevent *evt, struct event_driver *d,
-                               void *lib, int num_thread)
+                               void *lib, int num_thread, HDF *matenode)
 {
     if (evt == NULL || evt->table == NULL || d == NULL) return 0;
 
@@ -169,6 +178,23 @@ static int mevent_start_driver(struct mevent *evt, struct event_driver *d,
     }
 
     e->cur_thread = 0;
+
+    HDF *cnode = hdf_obj_child(matenode);
+    char *dle;
+    for (int i = 0; cnode && i < MAX_THREAD_NUM; cnode = hdf_obj_next(cnode)) {
+        void* (*mate_func)(void *arg);
+
+        mate_func = dlsym(lib, hdf_obj_value(cnode));
+        if ((dle = dlerror()) != NULL) {
+            wlog("unable to find %s %s", hdf_obj_value(cnode), dle);
+            mtc_err("unable to find %s %s", hdf_obj_value(cnode), dle);
+            continue;
+        }
+
+        e->mt_thread[i] = malloc(sizeof(pthread_t));
+        pthread_create(e->mt_thread[i], NULL, mate_func, (void*)e);
+        i++;
+    }
 
     uint32_t h;
     struct event_chain *c;
@@ -243,6 +269,7 @@ struct mevent* mevent_start(void)
         lib = NULL; driver = NULL; memset(tbuf, 0x0, sizeof(tbuf));
         name = hdf_get_value(res, "name", "_unexist");
         num_thread = hdf_get_int_value(res, "numberofthreads", 1);
+        HDF *mates = hdf_get_obj(res, "mates");
 
         snprintf(tbuf, sizeof(tbuf), "%s/mevent_%s.so", plugin_path, name);
         //lib = dlopen(tbuf, RTLD_NOW|RTLD_GLOBAL);
@@ -261,7 +288,7 @@ struct mevent* mevent_start(void)
             continue;
         }
 
-        ret = mevent_start_driver(evt, driver, lib, num_thread);
+        ret = mevent_start_driver(evt, driver, lib, num_thread, mates);
         if (ret != 1) wlog("init driver %s failure\n", name);
         else evt->numevts++;
 

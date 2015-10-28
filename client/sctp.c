@@ -45,6 +45,7 @@ static int add_sctp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port)
 
     evt->servers = newarray;
     evt->nservers++;
+    evt->nservers_ok++;
 
     if (port < 0)
         port = SCTP_SERVER_PORT;
@@ -58,6 +59,9 @@ static int add_sctp_server_addr(mevent_t *evt, in_addr_t *inetaddr, int port)
     newsrv->info.in.srvlen = sizeof(struct sockaddr_in);
 
     newsrv->type = SCTP_CONN;
+    newsrv->stat = SRV_STAT_OK;
+    newsrv->dietime = 0;
+    newsrv->errcount = 0;
 
     /* keep the list sorted by port, so we can do a reliable selection */
     qsort(evt->servers, evt->nservers, sizeof(struct mevent_srv),
@@ -150,4 +154,3 @@ uint32_t sctp_get_rep(struct mevent_srv *srv,
 }
 
 #endif /* ENABLE_SCTP */
-

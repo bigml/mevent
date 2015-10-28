@@ -6,6 +6,7 @@
 #include "net-const.h"
 #include "netutils.h"
 #include "packet.h"
+#include "mevent.h"
 
 size_t unpack_data_str(unsigned char *buf, size_t len, char **val)
 {
@@ -53,7 +54,19 @@ size_t unpack_hdf(unsigned char *buf, size_t len, HDF **hdf)
     hdf_init(hdf);
 
     ttsize = unpack_data_str(buf, len, &val);
-    if (val) hdf_read_string(*hdf, val);
+    if (val) {
+        NEOERR *err = hdf_read_string(*hdf, val);
+        if (err != STATUS_OK) {
+            if (mevent_log) {
+                STRING zstra;
+                string_init(&zstra);
+                nerr_error_traceback(err, &zstra);
+                mevent_log(__PRETTY_FUNCTION__, __FILE__, __LINE__, 2, "%s", zstra.buf);
+                string_clear(&zstra);
+            }
+            nerr_ignore(&err);
+        }
+    }
 
     return ttsize;
 }

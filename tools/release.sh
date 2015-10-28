@@ -52,6 +52,7 @@ done
 VERSION=${V_MAJOR}.${V_MINOR}.${V_REV}
 
 echo "prepare "$VERSION
+echo $VERSION > /usr/local/miad/version
 
 cd /;
 sudo mkdir -p /usr/local/release/
@@ -63,6 +64,7 @@ sudo tar zcvf ${PACKAGE_NAME}.${VERSION}.tar.gz \
     /usr/local/lib/libmevent.so \
     /usr/local/lib/libmongo-client.* \
     /usr/local/lib/mevent_*.so;
+sudo cp ${PACKAGE_NAME}.${VERSION}.tar.gz /opt/mevent;
 
 cd -;
 

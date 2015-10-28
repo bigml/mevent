@@ -25,7 +25,7 @@ RESTART=0
 
 DIR_BIN=${SITE_PATH}/mevent/server/daemon/
 DIR_SHELL=${SITE_PATH}/mevent/tools
-DIR_CFG=${SITE_PATH}/xport/
+DIR_CFG=${SITE_PATH}/mevent/server/oiad/
 
 BACK_DIR=$(date +%Y%m%d%H%m%S)
 
@@ -76,6 +76,9 @@ EOF
 
         rsync ${DIR_CFG}/server_test.hdf root@$i:/etc/mevent/server.hdf
         rsync ${DIR_CFG}/server_online.hdf root@$i:/etc/mevent/
+        rsync ${DIR_CFG}/server_online_masc.hdf root@$i:/etc/mevent/
+        rsync ${DIR_CFG}/server_online_ipb.hdf root@$i:/etc/mevent/
+        rsync ${DIR_CFG}/server_online_mqc.hdf root@$i:/etc/mevent/
         rsync ${DIR_CFG}/server_bakstation.hdf root@$i:/etc/mevent/
         rsync ${DIR_CFG}/client_forserver_online.hdf root@$i:/etc/mevent/
     fi
