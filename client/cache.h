@@ -49,6 +49,14 @@ struct cache *cache_create(size_t numobjs, unsigned int flags);
 int cache_free(struct cache *cd);
 int cache_get(struct cache *cd, const unsigned char *key, size_t ksize,
               unsigned char **val, size_t *vsize);
+/*
+ * cache_get() is not thread safe. cache_get_copyr() is.
+ * *val is a malloced memory pointer, user need to free it by hand.
+ * we offer thread safe version by get copy of cache's memory,
+ * not the cache val itself. then, you don't need to lock your business code.
+ */
+int cache_get_copyr(struct cache *cd, const unsigned char *key, size_t ksize,
+                    unsigned char **val, size_t *vsize);
 int cache_set(struct cache *cd, const unsigned char *k, size_t ksize,
               const unsigned char *v, size_t vsize, int timeout);
 int cache_del(struct cache *cd, const unsigned char *key, size_t ksize);
@@ -60,6 +68,8 @@ int cache_incr(struct cache *cd, const unsigned char *key, size_t ksize,
 
 int cache_getf(struct cache *cd, unsigned char **val, size_t *vsize,
                const char *keyfmt, ...);
+int cache_get_copyrf(struct cache *cd, unsigned char **val, size_t *vsize,
+                     const char *keyfmt, ...);
 int cache_setf(struct cache *cd, const unsigned char *v, size_t vsize,
                int timeout, const char *keyfmt, ...);
 int cache_delf(struct cache *cd, const char *keyfmt, ...);

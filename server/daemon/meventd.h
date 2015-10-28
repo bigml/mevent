@@ -5,6 +5,7 @@
 #include <stdint.h>        /* for int64_t */
 #include <stdbool.h>
 #include "queue.h"
+#include "net-const.h"
 
 /*
  * private, internal use
@@ -36,8 +37,10 @@ struct event_entry {
      * public, init in mevent_start_driver()
      */
     //void *lib;        /* for dlopen() */
-    struct queue *op_queue;
-    pthread_t *op_thread;
+    int num_thread;
+    int cur_thread;
+    struct queue *op_queue[MAX_THREAD_NUM];
+    pthread_t *op_thread[MAX_THREAD_NUM];
     int loop_should_stop;
     struct event_entry *prev;
     struct event_entry *next;

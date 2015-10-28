@@ -9,6 +9,7 @@
  * Isolated so it's shared between the server and the library code.
  */
 
+#define MAX_THREAD_NUM  10000
 #define MAX_MEMPACK_LEN (6*1024*1024)
 #define MAX_PACKET_LEN  (64*1024)
 #define RESERVE_SIZE    512
@@ -82,4 +83,3 @@ enum {
 };
 
 #endif
-

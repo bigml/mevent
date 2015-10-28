@@ -15,8 +15,6 @@
 #include "smsalarm.h"
 #include "reply.h"
 
-#include "mevent.h"
-
 static void parse_stats(struct queue_entry *q);
 
 
@@ -81,6 +79,8 @@ static int put_in_queue_long(const struct req_info *req, int sync,
                              HDF *hdfrcv)
 {
     struct queue_entry *e;
+    struct queue *cur_queue;
+    int ret;
 
     struct event_entry *entry = find_entry_in_table(mevent, ename, esize);
     if (entry == NULL) {
@@ -99,43 +99,46 @@ static int put_in_queue_long(const struct req_info *req, int sync,
         return 1;
     }
 
+    entry->cur_thread = entry->cur_thread < 0 ? 0 : entry->cur_thread;
+    if (entry->cur_thread > entry->num_thread) entry->cur_thread = entry->num_thread;
+    cur_queue = entry->op_queue[entry->cur_thread];
 
-    if (entry->op_queue->size > MAX_QUEUE_ENTRY &&
-        entry->op_queue->size % 100 == 0) {
-        SMS_ALARM("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
-        wlog("plugin %s busy, queue size %d\n", entry->name, entry->op_queue->size);
-        if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 2,
-                       "plugin %s busy, queue size %d",
-                       entry->name, entry->op_queue->size);
+    mtc_dbg("put to %s %d thread", entry->name, entry->cur_thread);
+
+    if (cur_queue->size > MAX_QUEUE_ENTRY &&
+        cur_queue->size % 100 == 0) {
+        SMS_ALARM("plugin %s busy, queue size %d\n", entry->name, cur_queue->size);
+        wlog("plugin %s busy, queue size %d\n", entry->name, cur_queue->size);
+        mtc_err("plugin %s %d busy, queue size %ld",
+                entry->name, entry->cur_thread, cur_queue->size);
         hdf_destroy(&hdfrcv);
         stats.pro_busy++;
         if (sync) req->reply_mini(req, REP_ERR_BUSY);
-        return 1;
-    } else if (entry->op_queue->size > QUEUE_SIZE_WARNING &&
-               entry->op_queue->size % 90 == 0) {
-        SMS_ALARM("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
-        wlog("plugin %s size exceed %d\n", entry->name, entry->op_queue->size);
-        if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 3,
-                       "plugin %s size exceed %d", entry->name, entry->op_queue->size);
-    } else if (entry->op_queue->size > QUEUE_SIZE_INFO &&
-               entry->op_queue->size % 10 == 0) {
-        wlog("plugin %s queue is %d\n", entry->name, entry->op_queue->size);
-        if (mevent_log)
-            mevent_log(__PRETTY_FUNCTION__,__FILE__,__LINE__, 3,
-                       "plugin %s queue is %d", entry->name, entry->op_queue->size);
+        ret = 1;
+        goto done;
+    } else if (cur_queue->size > QUEUE_SIZE_WARNING &&
+               cur_queue->size % 90 == 0) {
+        SMS_ALARM("plugin %s size exceed %d\n", entry->name, cur_queue->size);
+        wlog("plugin %s size exceed %d\n", entry->name, cur_queue->size);
+        mtc_warn("plugin %s %d size exceed %ld",
+                 entry->name, entry->cur_thread, cur_queue->size);
+    } else if (cur_queue->size > QUEUE_SIZE_INFO &&
+               cur_queue->size % 10 == 0) {
+        wlog("plugin %s queue is %d\n", entry->name, cur_queue->size);
+        mtc_warn("plugin %s %d queue is %ld",
+                 entry->name, entry->cur_thread, cur_queue->size);
     }
 
     e = make_queue_long_entry(req, ename, esize, hdfrcv);
     if (e == NULL) {
-        return 0;
+        ret = 0;
+        goto done;
     }
 
-    queue_lock(entry->op_queue);
-    if (sync) queue_cas(entry->op_queue, e);
-    else queue_put(entry->op_queue, e);
-    queue_unlock(entry->op_queue);
+    queue_lock(cur_queue);
+    if (sync) queue_cas(cur_queue, e);
+    else queue_put(cur_queue, e);
+    queue_unlock(cur_queue);
 
     if (sync) {
         /* Signal the DB thread it has work only if it's a
@@ -143,10 +146,16 @@ static int put_in_queue_long(const struct req_info *req, int sync,
          * waiting. It does have a measurable impact on
          * performance (2083847usec vs 2804973usec for sets on
          * "test2d 100000 10 10"). */
-        queue_signal(entry->op_queue);
+        queue_signal(cur_queue);
     }
 
-    return 1;
+    ret = 1;
+
+done:
+    entry->cur_thread++;
+    if (entry->cur_thread >= entry->num_thread) entry->cur_thread = 0;
+
+    return ret;
 }
 
 /* Like put_in_queue_long() but with few parameters because most actions do

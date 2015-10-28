@@ -203,7 +203,7 @@ int main(int argc, char **argv)
         wlog("Init trace file %s failure!\n",
              hdf_get_value(g_cfg, PRE_CONFIG".logfile", "/tmp/mevent"));
     nerr_init();
-    merr_init((MeventLog)mtc_msg);
+    merr_init(NULL);
 
     if (!settings.foreground) {
         pid = fork();
